@@ -1,0 +1,19 @@
+\textbf{\textit{[NC03]Automated Grading of SQL Tasks to Improve Student Learning}} is a project whose main goal is to allow automatic grading of students' tasks in $SQL$. In particular, this tool will produce individual grades and feedback for students who have completed a $SQL$ assignment.
+\section{Description of project} \label{description}
+The main goal of the application is to grade students' $SQL$ assignments. However, this tool will be able to provide hints or suggestions when students make errors (for instance, suggest if an user is missing a table in their query, or if they are selecting the wrong columns). This requires the following functionality:
+\begin{itemize}
+    \item The ability to compare the results of two queries directly and check if the results are identical.
+    \item The ability to compare internal elements of an $SQL$ query in case there are differences (e.g. tables selected, join conditions, $where$ filters, etc.)
+    \item The ability to return "hints" or other useful information to users when there are differences between the students' results and the teacher's results.
+\end{itemize}
+\section{Software platform} \label{softwarePlatform}
+This tool will make use of multiple software applications and frameworks:
+\begin{itemize}
+    \item The main part of the tool will be a web application built in \textit{Ruby on Rails 5.1}.
+    \item The front-end of the application will be built using \textit{HTML5, CSS, JavaScript}
+    \item The web application will use a $MySQL$ database to store details about the users, assignments and result.
+    \item The application will also execute all assignments in the same $MySQL$ database
+\end{itemize}
+
+\section{Hardware platform and Operating System}
+The application will be able to run on any $UNIX$ platform and it does not require any special hardware. The only requirements are the ability to run the software platforms mentioned in section \ref{softwarePlatform}.

@@ -1,0 +1,51 @@
+\section*{Grading $SQL$ requirements}
+\textbf{Must-have requirements:}
+\begin{enumerate}[label=R-\arabic*]
+  \item The library can connect to a $MySQL$ database when passed
+    connection details (server location - port, IP, user - and database name)
+  \item The library can handle any error that might occur when communicating to
+    the database (including failed execution of SQL queries, connection issues, etc.)
+  \item The library can perform $MySQL$ queries on a database.
+  \item The library can clear all tables and data from a database.
+  \item The library can compare the results of two $SQL$ queries and check if they
+    match.
+  \item The library can canonicalize two $SQL$ queries in order
+    \textit{to remove remove any irrelevant syntactic variation} as much as
+    possible.
+  \cite{literature:xdata}
+  \item The library can return differences in the column list, table list (including \texttt{JOIN}
+    conditions), \texttt{WHERE} conditions, \texttt{HAVING} conditions and \texttt{GROUP BY} conditions.
+  \item The library can return a partial grade based on the mistakes made
+  by the user
+\end{enumerate}
+
+\textbf{Additional requirements:}
+\begin{enumerate}[resume,label=R-OPT-\arabic*]
+  \item The library can generate a data set when given a database schema
+  and an instructor's query.
+\end{enumerate}
+
+\section*{Web application requirements}
+\textbf{Must-have requirements:}
+\begin{enumerate}[resume*,label=R-\arabic*]
+  \item The web application allows users to log-in and keep their data
+    across sessions.
+  \item The web application allows users to have different roles within the
+    application (e.g. Student/ Teacher/ TA)
+  \item  A teacher can create assignments by giving a title, a description,
+    and a $SQL$ query that creates the tables and the relations between them.
+    Optionally, the teacher can also provide a query that inserts some
+    initial data.
+  \item A student can provide solutions to assignments by submitting a
+  $SQL$ query. The web application returns the results to the students
+  after it assess the query.
+\end{enumerate}
+
+\textbf{Additional requirements:}
+\begin{enumerate}[resume,label=R-OPT-\arabic*]
+  \item The web application allows the teacher to set a release date and a group
+  of students to whom the assignment shall be given to.
+  \item $SQL$ typing on the web application should be made in a browser based
+  code editor that provides syntax highlighting and suggestions.
+  \item Teachers should be able to have a graphical view of the results.
+\end{enumerate}

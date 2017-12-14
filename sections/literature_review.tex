@@ -1,27 +1,35 @@
 \newcommand{\cmark}{\ding{51}}%
 \newcommand{\xmark}{\ding{55}}%
-\section{Existing online tools for grading SQL}
+\section{Existing online tools for grading SQL}\label{literature_review:online}
 
 \begin{center}
     \includegraphics[width=50mm,scale=0.5]{images/HackerRank.png}
 \end{center}
-
-HackerRank, one of the most popular tools in the tech recruiting world, also allows $SQL$ questions. The application fits most, but not all of our needs. First of all, the application is closed-source so we can not extend it at all. Second of all, the application does not allow regular users to create new challenges. However, the most important aspect is that it does not allow partial grading and it only supports exact matching of results. Moreover, no suggestions or hints are given in case of errors.
+HackerRank, one of the most popular tools in the tech recruitment world,
+also allows $SQL$ questions. The application fits most, but not all of our
+needs. First of all, the application is closed-source so we cannot
+extend it at all. Second of all, the application does not allow regular
+users to create new challenges. However, the most important aspect is
+that it does not allow partial grading and it only supports exact matching
+of results. Moreover, no suggestions or hints are given in case of errors.
 
 \begin{center}
     \includegraphics[width=50mm,scale=0.5]{images/LeetCode.png}
 \end{center}
-
-LeetCode, another popular tool in the recruiting world is very similar to HackerRank. That means that the application is still closed-source and normal users can't create the type of exercise we want.
-
+LeetCode is another popular tool in the recruitment world, very similar to
+HackerRank. That means that the application is still closed-source and
+normal users cannot create the type of exercises we want.
 
 \begin{center}
     \includegraphics[width=50mm,scale=0.5]{images/CodeCademy.png}
 \end{center}
+CodeCademy, one of the most popular tools for self-learning in Computer
+Science, also provides a $SQL$ course. CodeCademy provides an interactive
+course for learning $SQL$ and throughout it users have multiple assignments.
+Similarly to LeetCode and HackerRank, it is a closed source tool so it cannot be
+extended. However, this specific tool provides partial grading and suggestions.
 
-Codecademy, one of the most popular tools for self-learning in Computer Science, also provides an $SQL$ course. Codecademy provides an interactive course for learning $SQL$ and throughout it users have multiple assignments. Similarly to LeetCode and HackerRank it is a closed source tool so it can't be extended. However, this specific tool provides partial grading and suggestions.
-
-\subsection*{Other less popular tools}
+\subsection*{Other online tools}
 There are also other tools that share the same functionality with LeetCode and HackerRank
 \begin{itemize}
     \item w3resource
@@ -30,7 +38,7 @@ There are also other tools that share the same functionality with LeetCode and H
 \end{itemize}
 
 \subsection*{Comparison of online tools}
-We can now comapare the tools using the following criteria
+We can now compare the tools using the following criteria
 
 \begin{itemize}
     \item C1 = Open-Source
@@ -61,63 +69,102 @@ We can now comapare the tools using the following criteria
 \end{center}
 
 
-As no tool satisfies all our needs and because all tools are closed source, there is no way for us to use any existing only tool in any way in order to achieve the requirements for this project.
+As no tool satisfies all our needs and because all tools are closed source,
+there is no way for us to use any existing only tool in any way in order to
+achieve the requirements for this project.
 
-\section{Academic tools}
-\subsection{XData}
-Paper: \url{http://www.vldb.org/pvldb/vol9/p1541-chandra.pdf}
+\section{Standalone tools}
 
-XData system is a \textit{automated and interactive plaform for grading student $SQL$ queries, as well for learning $SQL$} built by IIT Bombay. The tool is built in $Java$ and supports three types of databases: $PostgreSQl$, $Microsoft SQL$ and finally $Oracle DB$. The tool is made available at \url{https://gitlab.com/xdata/xdata-web}, however no $LICENSE$ for using the tool is provided, so that means we are not going to be able to extend or use this tool. XData repository on GitLab provides plenty of documentation about how to use this tool.
+In addition to the online tools, there are also other tools developed (mostly
+in the academic word): XData \cite{literature:xdata}, AsseSQL
+\cite{literature:assesql}, ActiveSQL \cite{literature:activesql} and
+SQLify \cite{literature:sqlify}.
 
-\subsubsection*{Partial grading}
+Out of those tools, only XData provides its code to the public, but the
+repository provided does not include a \texttt{LICENCE}, which means that we are not
+able to use this for this project. In addition, XData does not support $MySQL$.
 
-XData fits most requirements of the project. Most importantly, it provides partial grading by comparing the student's query and the instructor's query. In order for this comparison to work, XData canonicalizes both queries in order to \textit{remove any irrelevant syntactic variations}.
+\section{Grading $SQL$}
+When looking at grading SQL assignments we can see three approaches used commonly:
 
-\subsubsection*{Extending the tool}
-
-Overall there are two big obstacles in using this tool for our purpose
 \begin{enumerate}
-    \item There is no $LICENCE$ which means that we are not allowed to extend or use this tool.
-    \item The tool doesn't support $MySQL$ which is the database that's being teached at Kings College London.
-
-However, there are many ideas about canonicalizing SQL queries that we can use in this project.
+    \item Comparing the two queries and returning a $boolean$ result (either match
+    or no match). This solution is by far the most common one and can be seen
+    used in most online tools mentioned in section \ref{literature_review:online}.
+    \item Comparing the data set and returning a percentage of how much data
+    is similar between the two queries. This approach is used by CodeCademy,
+    AsseSQL and ActiveSQL
+    \cite{literature:assesql,literature:activesql}.
+    \item Comparing the two queries and returning either a success response, or
+    a detailed response that contains the differences between two queries. This
+    approach can be seen in XData \cite{literature:xdata}.
+    \item Using peer reviews by students to grade SQL. This approach can be
+    seen in SQLify \cite{literature:sqlify}.
 \end{enumerate}
+Some tools, like ActiveSQL, also add additional hard-coded checks that look
+for any weaknesses in the student query: e.g. a \texttt{LIKE} operand being used
+without any wild-cards \cite{literature:activesql}.
 
-\subsection{AsseSQL}
+\subsection{Comparing the three approaches to grading $SQL$}
+In order to determine the best approach to use in our project, we looked at
+the four approaches:
 
-Paper: \url{http://crpit.com/confpapers/CRPITV20Prior.pdf}
+\textbf{Approach 1}: The scope of the project strictly requires partial grading,
+which this approach does not provide.
 
-AsseSQL is a similar tool to XData developed by Julia Coleman Prior from University of Techonology in Sidney.
+\textbf{Approach 2}: This approach to grading $SQL$ seems natural in a way, but
+can lead to grades that do not represent the reality. For instance the following
+two queries:
+\begin{center}
+    \texttt{SELECT * FROM table1}
 
-\subsubsection*{Partial grading}
-This approach doesn't provide the level of partial grading we want: it uses a simple pattern matching system for giving grades which can be unfair compared to the approach seen in XData.
+    \texttt{SELECT * FROM table1 WHERE condition1 and condition2}
+\end{center}
+can lead to results that penalize the second query even if it was closer to the
+expected result.
 
-\subsubsection*{Extending the tool}
-No code is provided for this tool.
+\textbf{Approach 3}: This approach is the most accurate way of grading SQL, as
+it ensures that the partial grading is done based on the structure of the two
+queries.
 
-\subsection{ActiveSQL}
+\textbf{Approach 4}: This approach cannot be applied to our project.
 
-Paper: \url{http://webcache.googleusercontent.com/search?q=cache:PDEdmoa0YckJ:www.napier.ac.uk/~/media/worktribe/output-254045/pub20051pdf.pdf+&cd=5&hl=en&ct=clnk&gl=uk&client=safari}
+Therefore, for this project we are going to use approach 3.
 
-ActiveSQL is an \textit{internet-based learning tool} for $SQL$ built by Dr. Gordon Rusell from Napier University, Edinburgh. ActiveSQL provides an interactive tutorial for learning $SQL$ that includes multiple exercies. Whenever submitting an answer to a question, a user receives a partial grade.
+\subsubsection{Canonicalizing $SQL$ queries}
+In order to perform a comparison between queries, we first need to transform the
+two queries, to remove any irrelevant syntactic variations
+\cite{literature:xdata}.
 
-\subsubsection*{Partial grading}
-The partial grading in ActiveSQL is built using multiple measures:
+XData uses this approach and provides the following transformations \cite{literature:xdata}:
 \begin{itemize}
-    \item Accuracy rate: the proportion of correct answers. The answer is first compared to the instructor's query on a public data set, but its then also compared to a data set that's not made visible to the user.
-    \item Hand-coded rules that check whether the student's query contains any weaknesses: e.g. a LIKE operand being used without any wildcards.
+    \item Attribute disambiguation: any attribute in the $SELECT$ without a
+    relation must have its relation added. For instance \texttt{A} should be
+    transformed to \texttt{r.A} where \texttt{r} is the inferred relation.
+    \item \texttt{BETWEEN} predicate elimination: transforming \texttt{BETWEEN} queries to
+    two $>$ and $<$ comparisons.
+    \item Normalization of nested queries in \texttt{IN} or \texttt{ANY}. We
+    can transform them to an \texttt{EXISTS} clause:
+    \texttt{r.A >ANY (SELECT s.A FROM s WHERE s.B>10)} can be transformed to
+    \texttt{EXISTS (SELECT s.A FROM s WHERE s.B>10 AND r.A>s.A)}
+    \item Removing \texttt{NOT} from conditions.
+    \item Transforming \texttt{a >= b} to \texttt{a + 1 > b}
+    \item Join minimization: removing redundant joins.
 \end{itemize}
 
-\subsubsection*{Extending the tool}
-No code is provided for this tool.
+\subsection{Dataset used for grading the two $SQL$ queries}
+In general there are two approaches:
+\begin{enumerate}
+    \item The teacher provides the data set when creating the assignment. This
+    is used in most tools.
+    \item The teacher provides two data sets - one visible to the students, one
+    not visible. This approach is used in ActiveSQL \cite{literature:activesql}.
+    \item A data set is randomly generated. This approach is used in XData
+    \cite{literature:xdata}.
+\end{enumerate}
 
-\subsection{SQLify}
-Paper: \url{https://pdfs.semanticscholar.org/eb57/08754c9e8eeec4ef96c5050d4a0e9d6141f7.pdf}
-
-SQLify is another tool for assessing $SQL$ built at University of Southern Queensland.
-
-\subsubsection*{Partial grading}
-SQLify uses an approach based on peer reviews by students and reviews by students which is not the goal of this application.
-
-\subsubsection*{Extending the tool}
-No code is provided for this tool.
+Out of the three, approach 3 and 2 are the most accurate. The problem with a single
+data set (or even data sets that are not randomly created)
+is that it can lead to wrong SQL queries giving the same result. For instance
+a condition $> 2$ will return the same results as a condition $ = 3$ on a data set
+made from $(-1, 0, 1, 3)$.

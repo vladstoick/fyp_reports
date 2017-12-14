@@ -1,0 +1,22 @@
+\section{SQL Grading Library}
+In order to implement requirements 1 to 9 we are going to build a library that
+handles all the assessment requirements. This library will be built as a Ruby
+gem that we can later reuse in the web application. The gem will expose a
+public interface that allows the comparison of $SQL$ queries and returns a
+detailed result of the comparison.
+
+\begin{itemize}
+  \item In order to implement R-1 to R-5 we need to use the \texttt{mysql2}
+  Ruby gem which provides a \texttt{MySQL} client. The client allows connecting
+  to a database and querying the database.
+  \item For requirement R-6 and R-7 we are going to create multiple transformers
+  that can canonicalize a SQL query.
+  \item For requirement R-OPT-8 we will need to look at the database structure
+  and generate a data set based on the query provided by the teacher. For instance,
+  if a $<$ condition is present, we should be able to generate data that fits all the
+  three possible conditions (equal, lower and greater).
+\end{itemize}
+
+\section{Web application}
+For requirements R-10 to R-13 and R-OPT-14 to R-OPT-16 we are going to build
+a $Ruby\ on\ Rails$ application that plugs in the SQL grading library.

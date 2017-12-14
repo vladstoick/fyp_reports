@@ -15,6 +15,7 @@
 \usepackage{lscape}
 \usepackage{amssymb}% http://ctan.org/pkg/amssymb
 \usepackage{pifont}% http://ctan.org/pkg/pifont
+\usepackage{enumitem}
 \usepackage{tikz}
 \usetikzlibrary{shapes,arrows}
 

@@ -1,10 +1,10 @@
 \section{Databases and SQL}
 A database is a collection of related data (data = known facts that can be
-recorded and have an implicit meaning). A $RDBMS$ is a collection of programs
+recorded and have an implicit meaning). A relational database management system ($RDBMS$) is a collection of programs
 that allow users to create and maintain a database \cite{sql_course}.
 
 $SQL$ (Structured Query Language) is a domain-specific language used in programming
-and designed for managing data held in a relational database management system ($RDBMS$).
+and designed for managing data held in an $RDBMS$.
 $SQL$ consists of many types of statements which can be classified, commonly, as: \cite{wiki:sql}
 \begin{itemize}
     \item Data Query Language
@@ -14,35 +14,52 @@ $SQL$ consists of many types of statements which can be classified, commonly, as
 \end{itemize}
 
 
-\section{SQL Assesments}
-$SQL$ assements usually consist of the following components:
+\section{SQL Assessments}
+$SQL$ assessments usually consist of the following components:
 
 \begin{itemize}
-    \item A SQL table schema provided by the teacher. The schema includes
+    \item An SQL table schema provided by the teacher. The schema includes
     the structure of the database tables and any relations between them.
     \item Optionally, an SQL query that inserts the initial data in the database.
     This query is provided by the teacher.
-    \item A description of the assesment and a correct query solution for the
+    \item A description of the assessment and a correct query solution for the
     assignment.
 \end{itemize}
 
-The assesment requires an $SQL$ query from the student that fits the requirements
+The assessment requires an $SQL$ query from the student that fits the requirements
 mentioned in the description of the problem. The query should return the same
 results as the query provided by the teacher.
+
+\subsection{Comparing SQL queries}
+Although comparing the results of two queries is a basic task, there are issues
+in determining what is wrong if the results are different. Needless to say, just
+looking at the results is not the best solution, considering the error might come
+from a simple missing $WHERE$ clause.
+
+Therefore, when comparing the two queries we need to look at the structure
+and elements of two queries: e.g. comparing what columns have been selected, or
+what $WHERE$ conditions have been used. This should generally return accurate
+\textit{hints} to what is wrong. However, this solution will only work in a few
+cases because there are multiple ways of writing the same query. For instance
+the following two basic $SELECT$ queries are identical:
+\begin{center}
+    \texttt{SELECT a.b FROM table as A}
+
+    \texttt{SELECT b FROM table}
+\end{center}
+
+That means that, before we compare the two tables, we need a way to transform
+the two queries to a similar form. Without those transformations, the simple
+comparison will return wrong results (for instance, in the query above
+\texttt{a.b} in the first query and \texttt{b} in the second query, both refer
+to the same column).
+
 
 \section{Project goals}
 \textbf{\textit{[NC03]Automated Grading of SQL Tasks to Improve Student Learning}}
 is a project whose main goal is to allow automatic grading of students' tasks
 in $SQL$. In particular, this tool will produce individual grades and feedback
-for students who have completed a $SQL$ assignment.
-
-The main goal of the application is to grade students' $SQL$ assignments.
-However, this tool will be able to provide hints or suggestions when students
-make errors (for instance, suggest if an user is missing a table in their
-query, or if they are selecting the wrong columns). This requires the
-following functionality:
-\begin{itemize}
-    \item The ability to compare the results of two queries directly and check if the results are identical.
-    \item The ability to compare internal elements of an $SQL$ query in case there are differences (e.g. tables selected, join conditions, $where$ filters, etc.)
-    \item The ability to return "hints" or other useful information to users when there are differences between the students' results and the teacher's results.
-\end{itemize}
+for students who have completed a $SQL$ assignment. This tool will be able to
+provide hints or suggestions when students make errors
+(for instance, suggest if an user is missing a table in their query, or if they
+are selecting the wrong columns).

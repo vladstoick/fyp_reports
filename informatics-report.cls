@@ -13,6 +13,10 @@
 \usepackage{listings}
 \usepackage{pgfgantt}
 \usepackage{lscape}
+\usepackage{amssymb}% http://ctan.org/pkg/amssymb
+\usepackage{pifont}% http://ctan.org/pkg/pifont
+\usepackage{tikz}
+\usetikzlibrary{shapes,arrows}
 
 \usepackage{lmodern}
 \renewcommand{\familydefault}{\rmdefault}

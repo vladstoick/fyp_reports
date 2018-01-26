@@ -143,7 +143,7 @@ XData uses this approach and provides the following transformations \cite{litera
     transformed to \texttt{r.A} where \texttt{r} is the inferred relation.
     \item \texttt{BETWEEN} predicate elimination: transforming \texttt{BETWEEN} queries to
     two $>$ and $<$ comparisons.
-    \item Normalization of nested queries in \texttt{IN} or \texttt{ANY}. We
+    \item Normalization of nested quer ies in \texttt{IN} or \texttt{ANY}. We
     can transform them to an \texttt{EXISTS} clause:
     \texttt{r.A >ANY (SELECT s.A FROM s WHERE s.B>10)} can be transformed to
     \texttt{EXISTS (SELECT s.A FROM s WHERE s.B>10 AND r.A>s.A)}

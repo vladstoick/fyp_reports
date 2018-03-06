@@ -10,3 +10,5 @@
 *.blg
 *.toc
 *.pyg
+_minted-report/
+**/__latexindent_temp.tex

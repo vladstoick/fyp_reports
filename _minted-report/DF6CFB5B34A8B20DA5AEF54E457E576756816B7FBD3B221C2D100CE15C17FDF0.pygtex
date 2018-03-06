@@ -1,0 +1,3 @@
+\begin{Verbatim}[commandchars=\\\{\}]
+\PYG{k}{SELECT} \PYG{n}{b} \PYG{k}{FROM} \PYG{k}{table}\PYG{p}{;}
+\end{Verbatim}

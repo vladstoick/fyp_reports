@@ -11,6 +11,7 @@
 \usepackage{url}
 \usepackage{verbatim}
 \usepackage{listings}
+\usepackage{minted}
 
 \usepackage{lmodern}
 \renewcommand{\familydefault}{\rmdefault}
@@ -64,7 +65,7 @@
 		}
 	\end{center}
 	\restoregeometry
-	
+
 	%Abstract
 	\begin{abstract}
     	     \setlength{\parindent}{0.3in}
@@ -99,9 +100,9 @@
      	               \input{\@ackFile}
 		\end{flushleft}
                     \end{quotation}
-          }\fi	
+          }\fi
 
-\setcounter{page}{0}	
+\setcounter{page}{0}
 }
 
 \renewcommand{\bibname}{References}

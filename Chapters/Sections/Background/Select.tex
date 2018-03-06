@@ -1,0 +1,42 @@
+\section{Components of a \texttt{SELECT} statement}
+Before we can look at extracting the components of each query, we need to understand
+what exactly a \texttt{SELECT} query contains. As this project uses \texttt{MySQL},
+we will refer to the documentation provided, \cite{mysql:documentation}
+\footnote{At the time
+of writing this document, version 5.7 is the most recent available version}.
+The documentation provides the following general syntax for a \texttt{SELECT}:
+\footnote{Some elements from the full syntax have been removed, as they
+were not relevant for this project. For instance, file output is not relevant here so it
+was removed.}
+
+\begin{minted}[bgcolor=code-background,linenos]{mysql}
+SELECT
+  [ALL | DISTINCT | DISTINCTROW ] select_expr
+  [FROM table_references]
+  [WHERE where_condition]
+  [GROUP BY [col_name | expr | position] [ASC | DESC], ...]
+  [HAVING where_condition]
+  [ORDER BY [col_name | expr | position] [ASC | DESC], ...]
+  [LIMIT [[offset,] row_count | row_count OFFSET offset]]
+\end{minted}
+
+From this we can get the following components:
+
+\begin{enumerate}
+  \item \textbf{Uniqueness filtering}: what sort filtering should be applied. There are
+  three main options here \mintinline{sql}{ALL} (the default option),
+  \mintinline{sql}{DISTINCT}, and \mintinline{sql}{DISTINCTROW}
+  \item \textbf{\texttt{SELECT} clause}: the list of projected attributes. \texttt{MySQL}
+  also accepts a nested sub-query as an attribute.
+  \item \textbf{\texttt{FROM} clause}: the list of tables used
+  \item \textbf{\texttt{WHERE} clause}: the list of conditions for selecting rows
+  \item \textbf{\texttt{GROUP} clause}: the list of attributes on which grouping will be
+  done.
+  \item \textbf{\texttt{HAVING} clause}: the list of filter conditions for aggregate
+  attributes
+  \item \textbf{\texttt{ORDER BY} clause}: how ordering of rows should be done
+  \item \textbf{\texttt{LIMIT} and \texttt{OFFSET} clauses}
+\end{enumerate}
+
+It is worth mentioning, that while most \texttt{RDBMS} support nested sub-queries
+in all clauses, we will not look at those type of queries in this project.

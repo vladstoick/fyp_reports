@@ -1,0 +1,10 @@
+\begin{Verbatim}[commandchars=\\\{\}]
+  \PYG{k}{SELECT}
+    \PYG{p}{[}\PYG{k}{ALL} \PYG{o}{|} \PYG{k}{DISTINCT} \PYG{o}{|} \PYG{k}{DISTINCTROW} \PYG{p}{]} \PYG{n}{select\PYGZus{}expr}
+    \PYG{p}{[}\PYG{k}{FROM} \PYG{n}{table\PYGZus{}references}\PYG{p}{]}
+    \PYG{p}{[}\PYG{k}{WHERE} \PYG{n}{where\PYGZus{}condition}\PYG{p}{]}
+    \PYG{p}{[}\PYG{k}{GROUP} \PYG{k}{BY} \PYG{p}{(}\PYG{n}{col\PYGZus{}name} \PYG{o}{|} \PYG{n}{expr} \PYG{o}{|} \PYG{n}{position}\PYG{p}{)} \PYG{p}{[}\PYG{k}{ASC} \PYG{o}{|} \PYG{k}{DESC}\PYG{p}{],} \PYG{p}{...]}
+    \PYG{p}{[}\PYG{k}{HAVING} \PYG{n}{where\PYGZus{}condition}\PYG{p}{]}
+    \PYG{p}{[}\PYG{k}{ORDER} \PYG{k}{BY} \PYG{p}{(}\PYG{n}{col\PYGZus{}name} \PYG{o}{|} \PYG{n}{expr} \PYG{o}{|} \PYG{n}{position}\PYG{p}{)} \PYG{p}{[}\PYG{k}{ASC} \PYG{o}{|} \PYG{k}{DESC}\PYG{p}{],} \PYG{p}{...]}
+    \PYG{p}{[}\PYG{k}{LIMIT} \PYG{p}{[[}\PYG{n}{offset}\PYG{p}{,]} \PYG{n}{row\PYGZus{}count} \PYG{o}{|} \PYG{n}{row\PYGZus{}count} \PYG{n}{OFFSET} \PYG{n}{offset}\PYG{p}{]}
+\end{Verbatim}

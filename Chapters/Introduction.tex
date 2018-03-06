@@ -1,0 +1,89 @@
+\chapter{Introduction}
+\section{Project motivations}
+With the technological advancements of the 21st century, acquiring and interpreting
+data has become essential for almost all areas of the economy.
+\cite{ec:big_data} ``argues that good use of data is at
+the centre of the future knowledge economy''.
+Furthermore, the \cite{gov:big_data} also believes that ``
+Data can truly be a catalyst for a society,an economy,
+a country that works for everyone.''. With this in mind, more and more companies are now employing data analysts in
+their companies. For example, it is estimated that the US needs over 140.000 workers with
+``data analytical expertise'' \citep{Lohr2012}.
+
+One of the most popular data sources
+in any company is usually the main database of the company which stores various
+data. 6 out of 10 most popular databases are Relation \texttt{DBMS} \citep{db_engine:statistics}.
+Accessing data in an \texttt{RDBMS} is done through \textit{Standard Query Language}
+(\texttt{SQL}).
+
+Nowadays, \texttt{SQL} is being taught to almost all students in a Computer Science
+degree. In this project we will explore how we can make assessing student's \texttt{SQL}
+assignments more accurate and computerized. There have been many attempts at improving this process made
+by various scholars: \cite{literature:activesql}, \cite{literature:assesql},
+\cite{literature:sqlify}, \cite{literature:xdata}. The work in this project is built
+on top of the work presented by these scholars, especially the work presented by
+\cite{literature:xdata} in their project \textbf{XData}.
+
+\section{\texttt{SQL} assignments}
+\texttt{SQL} assessments usually consist of the following components:
+
+\begin{itemize}
+    \item An \texttt{SQL} table schema provided by the teacher. The schema includes
+    the structure of the database tables and any relations between them.
+    \item Optionally, an \texttt{SQL} query that inserts the initial data in the database.
+    This query is provided by the teacher.
+    \item A description of the assessment and a correct query solution for the
+    assignment.
+\end{itemize}
+
+The assessment requires an \texttt{SQL} query from the student that fits the requirements
+mentioned in the description of the problem. The query should return the same
+results as the query provided by the teacher.
+
+There can be many types of query types (insertion, creation, updating, selecting
+etc.), but in this project we will \textbf{only}
+focus on \texttt{SELECT} statements.
+
+\subsection{Problems with assessing \texttt{SQL} assignments}
+Although comparing the results of two queries is a basic task, there are issues
+in determining what is wrong if the results are different. Needless to say, just
+looking at the results is not the best solution, considering the error might come
+from a simple missing \texttt{WHERE} clause.
+
+Therefore, when comparing the two queries we need to look at the structure
+and elements of two queries: e.g. comparing what columns have been selected, or
+what \texttt{WHERE} conditions have been used. This should generally return accurate
+\textit{hints} to what is wrong.
+
+However, in \texttt{SQL} there are often many ways to write the same query.
+For instance, the following pairs will return the same results and they are
+just as correct.
+
+\begin{itemize}
+  \item \mintinline{mysql}{SELECT A.b FROM t1 as A;}
+
+  \mintinline{mysql}{SELECT b FROM table;}
+  \item \mintinline{mysql}{SELECT t1.id FROM t1 JOIN t2 on t1.id = t2.id;}
+
+  \mintinline{mysql}{SELECT t2.id FROM t1 JOIN t2 on t1.id = t2.id;}
+  \item \mintinline{mysql}{SELECT a from t1 where a.id > 1;}
+
+  \mintinline{mysql}{SELECT a from a.id >= 2;}
+\end{itemize}
+
+Therefore, we can see that a simple comparison of elements will not be efficient
+in spotting if two queries are actually different. Therefore, before we can
+compare the two queries, we need a way to transform the two queries to a
+similar form. Without those transformations, the simple comparison may indicate
+that two queries are very different.
+
+\section{Project goals}
+
+This project aims to improve automated assessment of \texttt{SELECT SQL} assignments
+by providing a web application where teachers can create assignments and students can
+submit solutions. The application will then provide a partial grade for each assignment,
+obtained by comparing the query elements after applying a series of transformations in order
+to have the queries in a standardized form.
+
+Furthermore, the application resulted from this project is easily deployable across
+various infrastructures and can be easily extended by adding new functionality.

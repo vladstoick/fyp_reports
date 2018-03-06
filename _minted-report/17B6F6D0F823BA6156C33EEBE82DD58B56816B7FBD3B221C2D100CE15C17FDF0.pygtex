@@ -1,0 +1,3 @@
+\begin{Verbatim}[commandchars=\\\{\}]
+\PYG{k}{SELECT} \PYG{n}{t1}\PYG{p}{.}\PYG{n}{id} \PYG{k}{FROM} \PYG{n}{t1} \PYG{k}{JOIN} \PYG{n}{t2} \PYG{k}{on} \PYG{n}{t1}\PYG{p}{.}\PYG{n}{id} \PYG{o}{=} \PYG{n}{t2}\PYG{p}{.}\PYG{n}{id}\PYG{p}{;}
+\end{Verbatim}

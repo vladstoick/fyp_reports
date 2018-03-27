@@ -1,0 +1,22 @@
+\section{Testing the application against exercies from existing sources}
+Although software testing is an important part of testing any application, a more important evaluation part is looking at how the application performs against real-life examples. For this, we have tested the application against different assignment from various sources. We looked at exercises from the following two sources.
+
+\begin{itemize}
+    \item Exercises from \textit{Database System Concepts, 5th edition} written by Abraham Silberschatz, Henry F. Korth, S. Sudarshan.
+    \item Exercises from Hackerrank \texttt{SQL} course.
+\end{itemize}
+
+We tried to understand how will our application be able to handle actual usage if it were to be deployed in production. We compared the ability of the app to handle the solution queries for each 
+
+\subsection{Exercises from HackerRank}
+
+As mentioned in \ref{ch:lit:sec:tutor:comercial}, HackerRank provides multiple \texttt{SQL} exercises. They are separated in multiple sections:
+
+\begin{enumerate}
+    \item \textbf{Basic Select Queries}: which contains fairly basic select queries which only query one single table. They test the ability's student to use \mintinline{mysql}{WHERE} clauses and to select the right columns. Our application was able to handle all solutions from this section and provide appropriate hints and a partial grade.
+    \item \textbf{Advance Select Queries}: which contains 5 advanced exercises which involves sub-queries, \mintinline{mysql}{CASE}. While the application can successfully compare the results of the two queries, it won't be able to provide any accurate hints or assign an accurate partial grade.
+    \item \textbf{Basic join}: which tests student's ability to perform multiple JOIN actions. Our application was able to handle most solutions from this section and provide appropriate hints and a partial grade. The application was unable to properly handle joins with subqueries.
+\end{enumerate}
+
+\subsection{Exercises from \textit{Database System Concepts}}
+

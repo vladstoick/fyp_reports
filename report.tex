@@ -1,0 +1,61 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% 6CCS3PRJ Final Year Individual Project Report
+% luke.day@kcl.ac.uk
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\documentclass[11pt]{informatics-report}
+\usepackage{xcolor}
+\usepackage{natbib} %References
+\usepackage{graphicx}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Front Matter - project title, name, supervisor name and date
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\title{Automated Grading of SQL Tasks to Improve Student Learning}
+\author{Vlad Stoica}
+\studentID{1531350}
+\supervisor{Criado Pacheco, Natalia}
+
+\date{\today}
+
+\abstractFile{FrontMatter/abstract.tex}
+\ackFile{FrontMatter/acknowledgements.tex} %Remove line if you do not want acknowledgements
+
+\begin{document}
+\createFrontMatter
+\onehalfspacing
+\tableofcontents
+\doublespacing
+
+\definecolor{code-background}{gray}{0.97}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Report Content
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% You can write each chapter directly here or in a separate .tex file and use the include command.
+
+\include{Chapters/1-Introduction/main}
+\include{Chapters/2-Background/main}
+\include{Chapters/3-RequirementAndSpecifications/main}
+\include{Chapters/4-Design/main}
+\include{Chapters/5-Implementation/main}
+\include{Chapters/6-ImplementationOfWebApp/main}
+\include{Chapters/7-Testing/main}
+\include{Chapters/8-Evaluation/main}
+\include{Chapters/9-ProfessionalIssues/main}
+\include{Chapters/10-Conclusion/main}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% References
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\bibliographystyle{agsm}
+\bibliography{references}
+\addcontentsline{toc}{section}{Bibliography}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Appendices
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\appendix
+% \include{Appendices/appendix}
+% \include{Appendices/UserGuide}
+% \include{Appendices/SourceCode}
+\end{document}

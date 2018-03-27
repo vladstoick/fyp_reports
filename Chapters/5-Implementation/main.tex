@@ -1,0 +1,119 @@
+\chapter{Implementation and testing of the grading library}
+
+\section{Connecting to a MySQL server} \label{ch:impllib:sec:connecting}
+To connect to a MySQL server, the application uses the Ruby library mysql2. The library, or gem as it's called in Ruby, provides the implementation for connecting, querying and retrieving results from a MySQL server. mysql2 is a binding to MySQL's C library libmysql. mysql2 is the more modern and lean version of the mysql version. Compared to mysql gem, mysql2 gem can be 2 times faster and is built with Ruby in mind. Furthermore, mysql2 is also much more popular with over 42 million downloads on RubyGems, compared to mysql's 8 million downloads.
+
+To connect to a MySQL server, the library requires the address and port of the server, and an account and password. The account must be the root user or at least one that has the permission to create and drop databases, to create and drop users, and to grant permissions to an user.
+
+\subsection{Handling concurrent submissions}
+
+As the library will be used in a web application, concurrency is inevitable. Users can submit solutions at any time and it is possible that two users submit solutions at the same time. Obviously, concurrency can be ignored by limiting the execution of only one compile or assessment at a time. However, this solution can lead to frustrating waiting times and requires the implementation of background workers to compile the work. Therefore, the tool opted to implement a solution that allows concurrent executions.
+
+To allow concurrency, each submission or compilation is performed using different connections to different databases (a MySQL server can have multiple databases).  Every compilation or submission begins by creating a new and unique database based on the current time. The database name will follow the format \texttt{HOURMINUTESECOND}. While this should cover most cases, due to the concurrent nature of the application, it might be the case that two connections try to create a database with the same name. However, MySQL statements are atomic. That means that two statements can not both change the schema of the MySQL server. Therefore, it is guaranteed that at least one create will fail. In this case, we repeat all failed creations (by using the new time) until they succeed. On second and further attempts, we also add a \mintinline{ruby}{_attempt} at the end of the database name to reduce the chance of another conflict. At the end of the compilation, the newly created database will be dropped and all data associated discarded.
+
+%TC:ignore
+\begin{listing}
+    \centering
+    \begin{minted}{ruby}
+success = false
+attempt = 0
+while !success do
+  time = DateTime.now
+
+  if attempt > 0
+    @database = "#{Time.now.strftime("%H%M%S")}_#{attempt}"
+  else
+    @database = "#{Time.now.strftime("%H%M%S")}"
+  end
+
+  begin
+    @client.query("CREATE DATABASE `#{@database}`")
+    success = true
+  rescue Mysql2::Error => exception
+    raise exception unless exception.message.include?("database exists")
+    success = false
+    attempt += 1
+  end
+end
+\end{minted}
+    \caption{Creating a new database for each run}
+    \label{fig:creating_new_database}
+\end{listing}
+%TC:endignore
+
+\subsection{Preventing malicious actions from input SQL queries}
+
+Considering the fact that the library executes arbitrary queries, the risks associated with malicious SQL are significant. The application never returns back the query results which means that the potential for data leaking through this does not exist. However, an arbitrary query can destroy or modify other databases on the MySQL server. Therefore, the library must take extra precautions as it deals with unchecked user code. To prevent malicious actions, we create a new MySQL user that only has permission for the newly created database.
+%TC:ignore
+\begin{listing}
+    \begin{minted}{ruby}
+@client.query("CREATE USER IF NOT EXISTS `#{@database}`;")
+@client.query("GRANT ALL PRIVILEGES ON `#{@database}`.* TO `#{@database}` WITH GRANT OPTION;")
+    \end{minted}
+    \caption{Creating a new user with permissions for the new database}
+    \label{fig:creating_new_user}
+\end{listing}
+%TC:endignore
+All used queries are performed using this user, instead of using the root one. The temporaray user is also deleted at the end of the compile/ assessment execution. This way, the user input can only damage the created database for his assessment. However, this is not an issue considering these are short-lived databases which are destroyed at the end of the assessment.
+
+
+\section{Parsing and transforming queries}
+
+Part of the canonicalization and grading process, SQL queries will go through multiple transformations after being parsed and separated in independent components. MySQL does not provide an official parser for any programming language, so the library had to use a 3rd party tool.
+
+The library initially used the Ruby gem sql-parser. Throughout the development process, there have been multiple problems associated with this tool. Most importantly, the library did not have support for multiple SQL statements that we required. Unfortunately, many issues with sql-parser were discovered only late in the project.
+
+An alternative was represented by pg\_query Ruby gem. Internally it uses PostgreSQL's parsing library libpg\_query built in C++. pg\_query provides much better code and stability, due to its nature of being part of a production database system, compared to sql-parser which was only used for parsing. PostgreSQL, like MySQL, is a database system that is widely used, being the 4th most used database engine according to \cite{db_engine:statistics}. Although both PostgreSQL and MySQL have SQL at their core, each one implements their own version of SQL. Therefore, a query might work in MySQL, but not work in PostgreSQL, or return different results. For instance, in MySQL string comparison is case insensitive, while PostgreSQL is not. In addition, each SQL version adds their own functions that diverge from Standard SQL. Therefore, implementing pg\_query turned out to be impossible due to the many differences in syntax between them. In addition, time constraints made it unjustifiable to spend time on re-implementing all transformers already built.
+
+\subsection{Extending sql-parser}
+
+In the end, due to the issues described previously, a decision was made to continue using sql-parser. Fortunately, sql-parser uses a MIT license which allowed us to fork the library and implement the fixes in the fork. The parser was implemented using Racc's grammar files. According to the GitHub page of the tool, Racc is a \textit{LALR(1) parser generator} that generates Ruby code. LALR parsers are also known as "Look Ahead Left to Right" parsers. The fork created implemented the following functionality:
+\begin{itemize}
+    \item Support for \mintinline{mysql}{DISTINCT}, \mintinline{mysql}{DISTINCTROW}, \mintinline{mysql}{ALL} in \mintinline{mysql}{SELECT} statements
+    \item Support for \mintinline{mysql}{LIMIT} and \mintinline{mysql}{OFFSET}
+    \item Support for using a qualified column in \mintinline{mysql}{ORDER BY} clause
+    \item Support for using the columns number in \mintinline{mysql}{GROUP} clause
+\end{itemize}
+
+The process of adding a new feature was formed of multiple parts:
+\begin{enumerate}
+    \item Create a \mintinline{ruby}{Node} class representing the new clause, if a new clause was implemented. A \mintinline{ruby}{Node} represents an element of a query: a number, a word, a condition, etc. For instance, the newly created \texttt{LIMIT} node has the following structure:
+    \begin{listing}[H]
+        \centering
+\begin{minted}{ruby}
+class LimitClause < Node
+    def initialize(limit, offset)
+        @limit = limit
+        @offset = offset
+    end
+
+    attr_reader :limit, :offset
+end
+\end{minted}
+\caption{Limit clause \mintinline{ruby}{Node}}
+\label{fig:limit_clause}
+\end{listing}
+    \item Update existing \mintinline{ruby}{Node} to link to the newly created node. For instance, the \mintinline{ruby}{LimitClause} node had to be linked to the \mintinline{ruby}{TableExpression} node.
+    \item Add the new parsing rules to Racc grammar file. For instance, when adding the LIMIT clause there are three options: there is only a limit number, there are two numbers for limit and offset separated by the word \texttt{OFFSET}, or the two numbers are separated by a comma:
+\begin{listing}[H]
+    \centering
+    \begin{minted}{ruby}
+  limit_clause
+: # no action
+| LIMIT unsigned_integer { result = SQLParser::Statement::LimitClause.new(val[1], nil) }
+| LIMIT unsigned_integer OFFSET unsigned_integer { result = SQLParser::Statement::LimitClause.new(val[1], val[3]) }
+| LIMIT unsigned_integer comma unsigned_integer { result = SQLParser::Statement::LimitClause.new(val[3], val[1]) }
+    \end{minted}
+    \caption{Limit clause \texttt{Racc}}
+    \label{fig:limit_clause_racc}
+\end{listing}
+\end{enumerate}
+
+\section{Canonicalizing queries}
+
+
+
+
+\subsection{Implementing transformations}
+
+\section{Partial grading}

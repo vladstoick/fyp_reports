@@ -1,0 +1,248 @@
+\section{Literature review}
+
+The topic of assessing SQL has been looked into by various scholars. While most existing work focuses on the learning and teaching aspect, there is one more recent work done by \cite{literature:xdata} which also talks about automated grading.
+
+All existing work acknowledges that there are many issues with students learning SQL \citep{literature:assesql, literature:sqlify}. While many students are able to express queries in natural language, they have issues expressing them in SQL \citep{literature:mitrovic}. While teaching a university course about SQL, \cite{literature:mitrovic} noticed that many students also struggle with memorizing the database schema, often making naming mistakes. Furthermore, many students struggled to understand what mistakes they were making because they could only see detailed compilation errors \citep{literature:mitrovic}. These difficulties have been found by multiple scholars \citep{literature:assesql, literature:sqlify, literature:kearns, literature:mitrovic}.
+
+The obstacles of learning SQL can be associated with the way SQL can be learned. Constructing correct queries is not a skill that can simply be learned without significant effort and sufficient practice \citep{literature:assesql}. An inexperienced student will also have trouble visualizing the results of a query \citep{literature:assesql}.
+
+\subsection{Tutor applications} \label{ch:lit:sec:tutor}
+
+Due to the nature of existing work, most past work has tried to improve learning SQL by introducing a \textit{smart} tutor that can guide students when they make mistakes. Throughout the existing literature, there have been many attempts at creating such applications:
+
+\begin{itemize}
+    \item AsseSQL \citep{literature:assesql}
+    \item SQL-Tutor \citep{literature:kearns}
+    \item SQLAtor \citep{literature:sqlator}
+    \item ActiveSQL \citep{literature:activesql}
+    \item SQLify \citep{literature:sqlify}
+\end{itemize}
+
+All tutor applications listed above are meant to aid the student in their learning process. There are multiple ways the tutoring application can improve the teaching experience. In the applications listed above we noticed the following features:
+
+\begin{itemize}
+    \item Displaying the database schema
+    \item Providing feedback to students (in practice mode). The level of feedback varies from tool to tool. Some tools simply opt for displaying if the query is correct or wrong, while others provide a more detailed view of the results \citep{literature:assesql, literature:activesql}.
+    \item Automated grading using one of the following algorithms:
+        \begin{itemize}
+            \item Based on percentage of matched results: in some cases the grade was binary: that is either 100\% or 0\% \citep{literature:assesql}, while in other cases a grade was given based on how many results are matched \citep{literature:activesql}.
+            \item Based on peer review who assigns certain levels that a query meets \citep{literature:sqlify} in three factors: the output schema, the syntax of the query, and query semantics
+        \end{itemize}
+    \item Support for typing queries in relational algebra
+\end{itemize}
+
+Using these applications in the teaching process has been correlated to increased confidence in using SQL \citep{literature:activesql} and better performance in examinations \citep{literature:sqlify}. In addition, one quantitative study done with students who used such applications \citep{literature:activesql} showed that this type of tutor (especially as a web application) is helpful to students, with 92\% of them saying that using the application increased their understanding of SQL. Furthermore, 85\% said that practicing SQL online suits them better than testing their ability using paper tests.
+
+As previously mentioned, all these tools provide some sort of feedback, and all rely on displaying the result of the query and indicating which rows are not correct. These sort of hints can help the students understand what is wrong with their query. However, these sort of hints do not provide any helpful insights on the actual query: for example, they do not indicate if a \mintinline{mysql}{WHERE} condition is wrong, or if a \mintinline{mysql}{DISTINCT} filter is wrong.
+
+While most applications described above do a good job at helping students learn SQL, their grading algorithms have multiple flaws. When grading based on matched results, one of the common issue encountered is that students end up with a query that is incorrect but it returns the correct results \citep{literature:assesql}. In addition, the lack of partial marking for some tools means that a query very far away from being correct will receive the same grade as a query that is only slightly incorrect \citep{literature:assesql}.
+
+In the cases where partial marking exists, it is done based on the percentage of matched results. However, this approach has clear flaws as identified by the later work done by \cite{literature:xdata}. \cite{literature:xdata} identifies two main problems with this approach:
+
+\begin{itemize}
+    \item Students who make simple mistakes such as using $>$ instead of $<$ will most likely lose all marks even if the terms compared are correct
+    \item When the expected query is supposed to return no results, a clearly wrong query such as $1 = 2$ will return no results as well.
+\end{itemize}
+
+In addition, we found that the results also heavily depend on the data set on which the two queries are compared. A wrongly defined data set could lead to correct results even if the student's query is different. For instance, if we look at the following case: a table that has one columns. The data set included is (1, 2, 5, 7). The solution is looking for all rows that have a value less than 5. That means that a query such as \mintinline{mysql}{SELECT * from table1 WHERE column < 7} will return the expected results.
+
+\subsection{XData}
+
+More recent contributions by \cite{literature:xdata} improve the issues with existing learning tools. \cite{literature:xdata} have built XData, \textit{an interactive platform} for grading and learning SQL. Their work identifies all existing issues with SQL tools that we described above with regards to grading SQL.
+
+The main focus of XData is to improve the partial grading of queries. XData uses a different approach to assessing SQL compared to the tutor tools. Instead of considering the query results as the main aspect of an exercise, they consider the query components as the focus point when grading a query.
+
+\subsubsection{Components of a \mintinline{mysql}{SELECT} SQL query}
+
+A \mintinline{mysql}{SELECT} query is made out of multiple components. The official  \cite{mysql:documentation} \footnote{At the time
+of writing this document, version 5.7 is the most recent version available} provides the following general syntax for a \mintinline{mysql}{SELECT}:
+\footnote{Some elements from the full syntax have been removed, as they
+were not relevant for this project. For instance, file output is not relevant here so it
+was removed.}
+
+\begin{minted}{mysql}
+SELECT
+  [ALL | DISTINCT | DISTINCTROW ] select_expr
+  [FROM table_references]
+  [WHERE where_condition]
+  [GROUP BY [col_name | expr | position] [ASC | DESC], ...]
+  [HAVING where_condition]
+  [ORDER BY [col_name | expr | position] [ASC | DESC], ...]
+  [LIMIT [[offset,] row_count | row_count OFFSET offset]]
+\end{minted}
+
+From this we can get the following components:
+
+\begin{enumerate}
+  \item \textbf{Uniqueness filtering}: what type of filtering should be applied. There are
+  three main options here: \mintinline{sql}{ALL} (the default option),
+  \mintinline{sql}{DISTINCT}, and \mintinline{mysql}{DISTINCTROW}
+  \item \textbf{\mintinline{mysql}{SELECT} clause}: the list of projected attributes. MySQL
+  also accepts a nested sub-query as an attribute.
+  \item \textbf{\mintinline{mysql}{FROM} clause}: the list of tables used
+  \item \textbf{\mintinline{mysql}{WHERE} clause}: the list of conditions for selecting rows
+  \item \textbf{\mintinline{mysql}{GROUP} clause}: the list of attributes on which grouping will be
+  done
+  \item \textbf{\mintinline{mysql}{HAVING} clause}: the list of filter conditions for aggregate
+  attributes
+  \item \textbf{\mintinline{mysql}{ORDER BY} clause}: how ordering of rows should be done
+  \item \textbf{\mintinline{mysql}{LIMIT} and \mintinline{mysql}{OFFSET} clauses}
+\end{enumerate}
+
+\subsubsection{Problems with comparing components of a query}
+
+In SQL there are often many ways to write the same query.
+For instance, the following pairs will return the same results and they are
+just as correct.
+
+\begin{itemize}
+  \item \mintinline{mysql}{SELECT A.b FROM t1 as A;}
+
+  \mintinline{mysql}{SELECT b FROM table;}
+  \item \mintinline{mysql}{SELECT t1.id FROM t1 JOIN t2 on t1.id = t2.id;}
+
+  \mintinline{mysql}{SELECT t2.id FROM t1 JOIN t2 on t1.id = t2.id;}
+  \item \mintinline{mysql}{SELECT a from t1 where a.id > 1;}
+
+  \mintinline{mysql}{SELECT a from a.id >= 2;}
+\end{itemize}
+
+Therefore, we can see that a simple comparison of elements will not be efficient in spotting if two queries are actually different. Therefore, before we can compare the two queries, we need a way to transform the two queries to a similar form. Without those transformations, the simple comparison may indicate
+that two queries are very different.
+
+\subsubsection{Canonicalization of queries}
+
+To overcome the issues described above, \cite{literature:xdata} perform a transformation step before comparing the components of two queries. This canonicalization step has the purpose of removing \textit{any irrelevant syntactic variation} \citep{literature:xdata}. In orer to do that, XData applies multiple transformations to a query:
+
+\begin{itemize}
+    \item \textbf{Attribute disambiguation}: Unqualified columns are column names whose interpretation depends on the current context \citep{mysql:documentation}. For example, the column identifier \mintinline{mysql}{id} can represent two or more different actual columns depending on the context. To avoid this uncertainty, all columns must be transformed to qualified columns.
+    \item \textbf{Removing \mintinline{mysql}{BETWEEN}}: a \mintinline{mysql}{BETWEEN} can be transformed to two separate \mintinline{mysql}{<} and \mintinline{mysql}{>}. This will ensure that a query written with a \mintinline{mysql}{BETWEEN} will be matched with a query written with a \mintinline{mysql}{<} and a \mintinline{mysql}{>}.
+    \item \textbf{Transforming \mintinline{mysql}{NOT}}: Another transformation used is transforming \mintinline{mysql}{NOT} conditions by removing the \mintinline{mysql}{NOT} and changing the condition to the opposite one. For instance: \mintinline{mysql}{NOT a > 1} is the same condition as \mintinline{mysql}{a <= 1}.
+    \item \textbf{Transform \mintinline{mysql}{>} and \mintinline{mysql}{>=} to \mintinline{mysql}{<} and \mintinline{mysql}{<=}}
+    \item \textbf{Transforming equivalent columns}: When looking at queries that include one or more tables, it is often the case that a column reference is equivalent across tables - which is always the case for foreign keys. For instance, in a query with the following table expression: \begin{minted}{mysql}
+    FROM table1
+    LEFT JOIN table2 on table1.id = table2.fid
+    LEFT JOIN table3 on table2.fid = table3.random_id
+    \end{minted}
+    the following columns are equivalent: \mintinline{mysql}{table1.id}, \mintinline{mysql}{table2.fid}, \mintinline{mysql}{table3.random_id}, meaning that using any of them in a query would have the same result.
+\end{itemize}
+
+\subsubsection{Limitations of canonicalization}
+
+All these transformations have the purpose of making the two queries as comparable as possible. However, the authors acknowledge that there are certain limitations with this approach.
+
+One important issue is related to sub-queries. Although, XData does some additional transformations for sub-queries, \cite{literature:xdata} acknowledge that further work on sub-queries is crucial. When looking at the source code of XData \footnote{Available at https://gitlab.com/xdata/xdata-web. No LICENSE is provided}, we can see that the way the way the comparison is done is by trying to recursively match sub-queries with another sub-query. While this approach should generally work, there are cases when this will fail to assign any partial grades if the student uses a sub-query when there would be an alternative solution without a sub-query. Another issue identified by \cite{literature:xdata} is related to the use of \mintinline{mysql}{DISTINCT} in a sub-query in \mintinline{mysql}{FROM}, compared to using \mintinline{mysql}{DISTINCT} in the outer \mintinline{mysql}{SELECT}.
+
+\subsubsection{Partial grading}
+
+As mentioned before, XData assigns a grade by comparing the components. Each component is assigned a predefined weight (either given by the teacher, or defined as $1 / total_{components}$) which is used to calculate the final grade. Each query component is composed of multiple sub-parts. The algorithm of XData will try to match sub-parts. (including position, where relevant) and then penalize missing or additional sub-parts (a minimum grade of 0 is used for each component). Sub-queries are recursively graded and then matched with sub-queries from other queries (if any exist). In the case of Boolean expressions (\mintinline{mysql}{WHERE} and \mintinline{mysql}{HAVING}), the grading algorithm does not care about the Boolean operator used, and only cares about conditions.
+
+\subsection{Conclusion of literature review}
+
+All the tools mentioned previously have been deployed and used, according to the authors, successfully to grade student assignments, including the tutor applications. Later work by \cite{literature:xdata} showed that the approaches used by the available commercial applications described in section \ref{ch:lit:sec:tutor} have multiple flaws. Due to these flaws, such grading algorithms work better only in a \textit{tutor} application, rather than a grading application. In such a learning environment, the end goal of the student is to build a 100\% correct query, since he is able to attempt solving the query multiple times. On the other hand, in an assessment scenario, a student is more likely to make mistakes given the fact that he does not know if the query he wrote is correct. As mentioned before, grading on matched results (the approach used by all \textit{tutor} applications) is not necessarily relevant.
+
+On the other hand, work done by \cite{literature:xdata} with XData is better suited for grading assessments. XData's approach of canonicalizing queries and comparing components should yield grades that reflect the student's effective ability to construct queries.
+
+\section{Contributions}
+
+This project will mostly build on the work of XData, which provides the most accurate grading mechanism of all the ones available. The project will have a grading algorithm relatively similar to the one used in XData. Compared to XData, the project will focus on MySQL (which is not supported in XData). In addition, the tool will not look at queries containing sub-queries. The decision to not look at sub-queries was made due to time constraints, and the existing limitations presented by \cite{literature:xdata}.
+
+\subsection{Improved canonicalization} \label{ch:lit:sec:improved_canon}
+
+The first part in grading a query is to perform the canonicalization process. The project includes all transformations done by XData, and in addition to these, it also performs two more transformations:
+\begin{enumerate}
+    \item Transforming \mintinline{mysql}{*} in the full list of columns. This will ensure that the algorithm will not penalize students who type the full list of columns, instead of just using  \mintinline{mysql}{*}.
+    \item Making MySQL default attributes explicit. For instance, every MySQL \mintinline{mysql}{SELECT} query has a default uniqueness filter of \mintinline{mysql}{ALL}. That means that, while explicitly mentioning \mintinline{mysql}{ALL} will have no effect, it will not make the query wrong either.
+\end{enumerate}
+
+\subsection{Improved partial grading} \label{ch:lit:sec:improved_grading}
+
+The project will provide a partial grading algorithm, using XData's approach. It will compare each element of the two queries (the student's and the instructor's) and assign a partial grade. However, the application will implement a different way for grading individual components. While XData only looks at perfect matches (same position, same structure), we will assign a partial grade even when two sub-parts of a query component are partially matching.
+
+The grade of a student's query will be based on the individual grade that comes from each component of the query. Each component of the query will have a certain weight in the final grade. As with XData, the weight can either be introduced manually or defaulted to $1 / total_{components}$.
+
+When looking at a query, we can determine the following types of components:
+
+\begin{itemize}
+    \item Simple components: that have predefined attributes. This is the case for:
+        \begin{itemize}
+            \item Uniqueness filter, which can only have one value (\mintinline{mysql}{DISTINCT}, \mintinline{mysql}{DISTINCTROW}, \mintinline{mysql}{ALL})
+            \item Limit and offset filter, which only has two attributes
+        \end{itemize}
+    \item Array components: that have a list of sub-components. This is the case for:
+        \begin{itemize}
+            \item Column list
+            \item Table list
+            \item Ordering list
+            \item Grouping list
+        \end{itemize}
+    \item Boolean components: that have a list of boolean conditions. This is the case for:
+        \begin{itemize}
+            \item Where filtering
+            \item Group filtering
+        \end{itemize}
+\end{itemize}
+
+\subsubsection{Partial grading of simple components}
+
+For simple components, we can look at the attributes of each component when assigning a partial grade.
+
+In the case of the uniqueness filter, we assign a 100\% grade if the two filters are unique. If the two filters are a pair of \mintinline{mysql}{DISTINCT} and \mintinline{mysql}{DISTINCTROW}, we assign a grade of 50\%. In all other cases, we assign a grade of 0\%.
+
+In the case of the limit and offset filter, both attributes have a weight of 50\% each. That means that if both attributes match, the grade assigned will be 100\%, if only one attribute matches, then a grade of 50\% will be assigned, otherwise a grade of 0\% will be given.
+
+\subsubsection{Partial grading of array components}
+
+Each array component can be compared with the components of the instructor's query, and assigned a match score (or percentage). For instance, a \mintinline{mysql}{ORDER BY c1 ASC} can be compared to \mintinline{mysql}{ORDER BY c1 DESC} and be assigned a match score. We apply the following matching rules:
+
+\begin{itemize}
+    \item Columns list: a 100\% match means that the two columns are identical. If the two columns are different, we then check the table - if the table is the same we then apply a levenshtein distance between the two column names to see how close they are.
+    \item Table list: a 100\% match means that the the components are identical. In the case of base tables (the first table in the table expression), this means that the table name is the same. For join expressions, this means that the table name, the join type and the join condition are identical. For join expressions we can also apply partial grading if the table joined is identical but either of the join type or join condition are different.
+    \item Ordering list: a 100\% match means that the two ordering conditions are identical and in the same position. For partial grading we will consider the position difference, or the ordering type (\mintinline{mysql}{ASC} or \mintinline{mysql}{DESC})
+    \item Grouping list: we apply the same rules as for the columns list.
+\end{itemize}
+
+
+When comparing two array components, we apply the following general algorithm (which can be identified as a greedy algorithm):
+\begin{enumerate}
+    \item We find the elements that match perfectly.
+    \item We build two lists containing the unmatched components from the instructor and the student.
+    \item We iterate through the list of unmatched student components and select the instructor's component with the closest match score (if one exists). If we find a match (i.e. the match score is greater than 0\%), we remove the selected instructor's component from the instructors' unmatched list). Otherwise, we continue iterating until we went over every unmatched student attribute.
+\end{enumerate}
+
+The final grade has the following formula:
+\begin{equation*}
+    Final\ grade = \frac{count_{perfectly\_matched\_components} * 2.0 + score_{matched\_components}}{count_{student\_attributes} + count_{instructor\_attribute}}
+\end{equation*}
+
+\subsubsection{Partial grading of Boolean components}
+
+As mentioned before, when comparing Boolean components, XData disregards the structure of the Boolean expression (the use of \mintinline{mysql}{AND} or \mintinline{mysql}{OR}) and only looks at the conditions by grading them as an array component. While this approach is acceptable to a certain degree, disregarding a part of a component will benefit those who make mistakes.
+
+Partially grading Boolean expressions is more complicated than simple arrays, and there can be many approaches to partially grading them. One approach, and the one this project uses, is to consider the Boolean expression tree. A binary expression tree is a specific type of binary tree used to represent expressions. For instance, the following Boolean expression: $a \land b \lor c$ can be expressed as the following tree:
+
+\Tree[
+    .$\lor$
+    [
+        .$\land$
+        [.$a$ ]
+        [.$b$ ]
+    ]
+    [
+        .$c$
+    ]
+]
+
+In a tree representation of a Boolean expression, the following are true:
+\begin{enumerate}
+    \item Internal nodes represent Boolean operators.
+    \item Leaves are represented by conditions.
+\end{enumerate}
+
+That means that a grade of such expression could be split in two separate parts, each with an equal weight. The first part would look at how many internal nodes of the tree match. For this part we can compare the two trees recursively, and see how many elements match. The second part would look at how many leaves (actual conditions) match. In order to grade this, the array approach can be used as the list of leaves is a simple array. As before, we can assign a partial match score for two conditions: for instance, if two queries compare the right elements, but use a $>$ instead of $<$.
+
+\subsection{Ease of extending the application}
+
+Another important contribution this project brings to the existing literature is related to the easiness of extending the project. Out of the tools previously mentioned, only XData makes its source code public. Unfortunately, the code is clearly not meant to be open source. First of all, it doesn't provide any LICENSE which means that, legally, no one is able to reuse this code. Second of all, the code suffers from multiple problems: from files longer than 3000 lines to tens of lines of codes commented for no given reason, and a lack of proper documentation. Finally, the application lacks proper software testing, with only a few unit tests being included.
+
+The tool built by the project will adhere to the default standards used by \textit{RuboCop}, a \textit{Ruby} linter. In addition, the tool will try to modularize each part of the grading process in order to ensure that the tool can be later extended. Finally, the tool will be fully documented and will have unit tests and integration tests to ensure that new features added will not affect current functionality.

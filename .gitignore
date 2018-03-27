@@ -1,0 +1,14 @@
+*.aux
+*.dvi
+*.fdb_latexmk
+*.fls
+*.log
+*.out
+*.pdf
+*.synctex.gz
+*.bbl
+*.blg
+*.toc
+*.pyg
+_minted-report/
+**/__latexindent_temp.tex

@@ -33,9 +33,10 @@ As mentioned, one of the goals of the project is to build an application that ca
     \item \mintinline{ruby}{DataExtractor} class looks over the extraction of data and schema of a database. This is uses in the \mintinline[breaklines]{ruby}{compile()} method for returning the structure of the database.
     \item \mintinline{ruby}{QueryTransformer} class that handles the canonicalization process. This class sequentially (in a predefined order) runs transformers defined in the \mintinline{ruby}{Trasnformers::} namespace. Each class from the \mintinline{ruby}{Trasnformers::} namespace performs a single type of transformation. They take in a query, apply a set of transformations and then return the transformed query.
     \item \mintinline{ruby}{QueryAttributeExtractor} class which handles the extraction of various components of a query after a transformation has been made. In order to do that, it makes use of parsers defined in defined in the \mintinline{ruby}{Parsers::} namespace. Each class from the \mintinline{ruby}{Parsers::} namespace extracts a single attribute. Although we are using a parser to parse SQL, these classes allow us to remove unwanted syntax and to transformed the parsed elements to a format that suits us better.
-    \item \mintinline{ruby}{QueryComparator} class which compares the results and components of two queries.
-    \item \mintinline{ruby}{QueryComparisonResult} class which represents the result of such a comparison. It includes a grade, hint and grades of each component of the query.
-    \item In addition, the library also contains multiple \mintinline{ruby}{Error} classes that reperesent various errors that might happen during the execution of the process - such as the inability to establish a database connection (\mintinline{ruby}{DatabaseConnectionError})
+    \item \mintinline{ruby}{QueryComparator} class which compares the results of two queries.
+    \item \mintinline{ruby}{Graders::} namespace contains multiple graders whose job is to compare a single component of a query (e.g. \mintinline{ruby}{Graders::Columns} handles the assessment of the columns component)
+    \item \mintinline{ruby}{QueryComparisonResult} class which represents the final result of the submission. It includes a grade, hint and grades of each component of the query. This class also calculated the partial grade based on the results of the QueryComparator, and a comparison between the actual components of the two SQL queries using the graders from \mintinline{ruby}{Graders::}
+    \item In addition, the library also contains multiple \mintinline{ruby}{Error} classes that represent various errors that might happen during the execution of the process - such as the inability to establish a database connection (\mintinline{ruby}{DatabaseConnectionError})
 \end{enumerate}
 
 Splitting the functionality into multiple classes leads to cleaner code that allows faster development. This method of development makes use of the Object Oriented Programming principle called encapsulation. Encapsulation, also known as "information hiding", minimizes interdependence between clasess by providing a strong external interface \citep{Encapsulation}. For instance, no class other than \mintinline{ruby}{DatabaseConnection} knows how queries are exactly performed. The other classes simply know that \mintinline{ruby}{DatabaseConnection} provides a way to execute single and multi queries. This allowed the project to initially focus on the core aspect of it - the canonicalization process, before thinking about concurrency or security issues described in section \ref{ch:impllib:sec:connecting}.
@@ -64,12 +65,12 @@ When compiling an assessment, a query will go through multiple steps:
     \hline
     \textbf{Step} & \textbf{Action} & \textbf{Code implementation} \\\hline
     \endhead
-    1 & Acquire a database connection and handle any errors & Create a new \mintinline{ruby}{DatabaseConnection} and return any potential \mintinline{ruby}{DatabaseConnectionError}. \\\hline
-    2 & Create the database tables passed in the \mintinline{ruby}{create_schema_sql_query} & Execute the \mintinline{ruby}{create_schema_sql_query} on the \mintinline{ruby}{DatabaseConnection} and return any potential \mintinline{ruby}{DatabaseSchemaError} \\\hline
-    3 & Seed the database tables data provided by \mintinline{ruby}{seed_sql_query} & Execute the \mintinline{ruby}{seed_sql_query} on the \mintinline{ruby}{DatabaseConnection} and return any potential \mintinline{ruby}{DatabaseSeedError} \\\hline
+    1 & Acquire a database connection and handle any errors & Create a new \texttt{DatabaseConnection} and immediately return any potential \texttt{DatabaseConnectionError}. \\\hline
+    2 & Create the database tables passed in the \texttt{create\_schema\_sql\_query} & Execute the \texttt{create\_schema\_sql\_query} on the \texttt{DatabaseConnection} and immediately return any potential \texttt{DatabaseSchemaError} \\\hline
+    3 & Seed the database tables data provided by \texttt{seed\_sql\_query} & Execute the \texttt{seed\_sql\_query} on the \texttt{DatabaseConnection} and immediately return any potential \texttt{DatabaseSeedError} \\\hline
     4 & Try to execute the correct query to ensure that the instructor's query can actually be performed
-    on the current database and that it does not contain any syntactic errors. & Execute the \mintinline{ruby}{instructor_sql_query} on the \mintinline{ruby}{DatabaseConnection} and return any potential \mintinline{ruby}{DatabaseQueryExecutionFailed} \\\hline
-    5 & Extract the tables and data from the database & Use \mintinline{ruby}{DataExtractor} to extract data and tables using the \mintinline{ruby}{DatabaseConnection}. \\\hline
+    on the current database and that it does not contain any syntactic errors. & Execute the \texttt{instructor\_sql\_query} on the \texttt{DatabaseConnection} and immediately return any potential \texttt{DatabaseQueryExecutionFailed} \\\hline
+    5 & Extract the tables and data from the database & Use \texttt{DataExtractor} to extract data and tables using the \texttt{DatabaseConnection}. \\\hline
 \end{tabularx}
 
 \subsection{Assess method}
@@ -92,7 +93,20 @@ When compiling an assessment, a query will go through multiple steps:
 \caption{Overview of compile method}
 \end{figure}
 
-The assess method is fairly similar to the compile method. In fact, the steps 1-3 from compile method are also used in this method. The rest continues as following:
+The assess method is fairly similar to the compile method. In fact, the steps 1-3 from compile method are also used in this method. The rest of the method continues as following:
+
+\begin{tabularx}{\textwidth}{|c|Y|Y|}
+    \hline
+    \textbf{Step} & \textbf{Action} & \textbf{Code implementation} \\\hline
+    \endhead
+    4 & Execute and store the results of both the student's query and the instructor's query & Execute the \texttt{instructor\_sql\_query} and \texttt{student\_sql\_query} on the \texttt{DatabaseConnection} and return any potential \texttt{DatabaseQueryExecutionFailed} \\\hline
+    5 & Compare the results obtained in step 4 & Execute \texttt{QueryComparator}'s compare method on the results of the two queries obtained in step 4. \\\hline
+    6 & Canonicalize each query & Execute \texttt{QueryTransformer}'s transform method on each query. Internally, each query goes through multiple transformations performed by classes from \texttt{Transformers::} namespace. \\\hline
+    7 & Extract the components of each query &  Execute \texttt{QueryAttributeExtractor}'s extract method on each query. Internally, each query component is obtained by multiple parsers performed by classes from \texttt{Parsers::} namespace. \\\hline
+    8 & Compute the final grade and return the components, hints and grade to the caller &  Build a new \texttt{QueryComparisonResult}'s based on the result of the comparison of the results, and the components obtained in step 6. Internally, the partial grade is obtained by comparing each element. The comparison of each component is delegated to a class from \texttt{Graders::} namespace. Finally, assemble the final \texttt{QueryComparisonResult} which includes the full list of components, a hint based on the comparison, and the final grade\\\hline
+\end{tabularx}
+
+
 \begin{tabularx}{\textwidth}{|c|Y|Y|}
 
 \end{tabularx}

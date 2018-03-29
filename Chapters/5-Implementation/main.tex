@@ -130,20 +130,38 @@ After a query is modified, sql-parser exposes a \mintinline{ruby}{.to_sql} metho
 As previously mentioned in section \ref{ch:lit:sec:improved_canon}, the library will implement a canonicalization step. The library implements all canonicalizations done by XData and described in section \ref{ch:lit:sec:canonicalization}, and the additional ones presented in section \ref{ch:lit:sec:improved_canon}. All transformations will use sql-parser's transformations ability combined with the ability to make queries on the database.
 
 \subsection{Transforming \mintinline{mysql}{*} to all columns}
-To transform \mintinline{mysql}{*} to MySQL, the library uses the fact that it doesn't need to support subqueries. That means that it can simply look at what tables are selected and then perform \mintinline{mysql}{SHOW COLUMNS FROM table_name} on each table to get the full list of columns for each table. The library will then simply update the list of columns (initially represented by a \mintinline{mysql}{*}) to the new list of columns which contain the full list of \texttt{table\_name.column} for each selected table.
+To transform \mintinline{mysql}{*} to MySQL, the library uses the fact that it doesn't need to support sub-queries. That means that it can simply look at what tables are selected and then perform \mintinline{mysql}{SHOW COLUMNS FROM table_name} on each table to get the full list of columns for each table. The library will then simply update the list of columns (initially represented by a \mintinline{mysql}{*}) to the new list of columns which contain the full list of \texttt{table\_name.column} for each selected table.
 
 \subsection{Transforming ambigous columns to unambigous columns}
 \subsection{Transforming equivalent columns}
-In order to find all equivalent columns, we need to build an undetected graph $G(V, E)$:
 
+The transformation of equivalent columns is a two step process. First, the library determines which components are equivalent, and after that it updates all column references to the minimum lexicographically string from the equivalence group.
+
+When determining the equivalent columns, the library builds a undirected graph $G(V, E)$:
 \begin{enumerate}
     \item $V$: the list of all columns used in the table expression
-    \item $E$: there is an edge between $v_1$ and $v_2$ if and only if in the table expression there is a join condition based on the $v_1$ and $v_2$
+    \item $E$: there is an edge between $v_1$ and $v_2$ if and only if in the table expression there is a join condition based on the equality of $v_1$ and $v_2$. To build the edges, the library goes over all join conditions from the SQL statement and builds the edges as described above.
 \end{enumerate}
 
 We can then apply a strongly connected component (SCC) algorithm to obtain all SCCs from a graph. If a column $v$ belong to component $c$, then it means that $v$ is equivalent to all other $v_e$, where $v_e \in c$.
 
-\section{Making defaults explicit}
+\begin{figure}[H]
+\begin{tabular}{ c c }
+\begin{minipage}[t]{0.5\textwidth}
+\begin{minted}{mysql}
+SELECT *
+FROM table1
+LEFT JOIN table2 on table1.id = table2.fid
+LEFT JOIN table3 on table2.fid = table3.random_id
+\end{minted}
+\end{minipage}
+&
+\raisebox{-.5\height}{\includegraphics[height=4cm]{Chapters/5-Implementation/scc.png}}
+\end{tabular}
+\caption{Example of equivalence graph}
+\end{figure}
+
+\subsection{Making defaults explicit}
 
 Every \texttt{MySQL} query has certain default attributes. For instance, every \texttt{MySQL SELECT} query has a default uniqueness filter of \mintinline{mysql}{ALL}. That means while explicitly mentioning \mintinline{mysql}{ALL} will have no effect, it does not mean that it is making the query wrong.
 

@@ -78,10 +78,10 @@ The application (including the library) has only two dependencies:
   R-6 & The teacher should allow editing the assignments after they are created. & Updates the card in the database and re-compiles the query. \\\hline
   R-7 & The teacher should allow the deletion assignments after they are created. & Deletes the challenge from database \\\hline
   R-8 & A student should be able to provide solutions to assignments by submitting a SQL query. The web application should return the results instantly to the students after it assess the query. If any compilation errors are returned, they will be shown to the student. & Provide a web form built in Bootstrap that provides a code editor using codemirror. Assess the query using the assess method provided by grading library. Save all submissions in the database after they have been assessed. \\\hline
-  R-9 & A student should be able to view the schema of the database for the assignment. & . \\\hline
-  R-10 & A  student  should  be  able  to  see  hints  if  they  make  any  errors,  or  they  can  also  see  a breakdown of the components from the teacher’s query and the ones used by their query. & . \\\hline
-  R-11 & SQL typing on the web application should be made in a browser based code editor that provides syntax highlighting. & . \\\hline
-  R-12 & Teachers should be able to have a graphical view of the results and download the results in  a CSV format.   In  addition,  they  should  be  able  to  view  the  results  of  individual submissions. & . \\\hline
+  R-9 & A student should be able to view the schema of the database for the assignment. & Render a HTML views that contains the schema of the database and provide a form written in Bootstrap and codemirror where they provide solutions. \\\hline
+  R-10 & A  student  should  be  able  to  see  hints  if  they  make  any  errors,  or  they  can  also  see  a breakdown of the components from the teacher’s query and the ones used by their query. & Display a HTML view based on the results of their submission, after being graded. \\\hline
+  R-11 & SQL typing on the web application should be made in a browser based code editor that provides syntax highlighting. & Provide a code editor written in codemirror. \\\hline
+  R-12 & Teachers should be able to have a graphical view of the results and download the results in  a CSV format.   In  addition,  they  should  be  able  to  view  the  results  of  individual submissions. & Provide a download button that gets the best submission of each student for a certain assignment.. \\\hline
 \end{tabularx}
 
 \subsection{Specification for Library}

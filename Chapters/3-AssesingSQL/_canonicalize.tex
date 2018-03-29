@@ -6,23 +6,6 @@ Each query goes through multiple transformations. We are going to look at each s
 
 \subsection{Transforming \mintinline{mysql}{*} to the full list of columns}
 
-One important transformation in comparing the two queries, is to first obtain the full list of columns used. To do this, we look at the columns of each element of the table expression, and see what columns they contain. 
+One important transformation in comparing the two queries, is to first obtain the full list of columns used. To do this, we look at the columns of each element of the table expression, and see what columns they contain.
 
 \subsection{Transforming equivalent columns}
-
-In order to find all equivalent columns, we need to build an undetected graph $G(V, E)$:
-
-\begin{enumerate}
-    \item $V$: the list of all columns used in the table expression
-    \item $E$: there is an edge between $v_1$ and $v_2$ if and only if in the table expression there is a join condition based on the $v_1$ and $v_2$
-\end{enumerate}
-
-We can then apply a strongly connected component (SCC) algorithm to obtain all SCCs from a graph. If a column $v$ belong to component $c$, then it means that $v$ is equivalent to all other $v_e$, where $v_e \in c$.
-
-\subsection{Making defaults explicit}
-
-Every \texttt{MySQL} query has certain default attributes. For instance, every \texttt{MySQL SELECT} query has a default uniqueness filter of \mintinline{mysql}{ALL}. That means while explicitly mentioning \mintinline{mysql}{ALL} will have no effect, it does not mean that it is making the query wrong.
-
-In order to accurately compare two queries, we must make the defaults explicit in both queries.
-
-\subsection{More to come..}

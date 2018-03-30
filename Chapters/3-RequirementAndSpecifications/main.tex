@@ -56,6 +56,32 @@ We have opted for a Ruby programming language based on the following criteria:
     \item Ruby on Rails is one of the most popular and easy to use web application framework. It is a very opinionated framework which means it allowed us less time deciding on which way to implement certain features.
 \end{itemize}
 
+\subsection{Development process}
+
+Although the two libraries allow parallel development, throughout the development of the project a waterfall approach will be used. The general pattern of development is the following:
+
+\begin{enumerate}
+  \item Implement and test feature in library and publish new version of the library
+  \item Update web application to the last version of library
+  \item Update the web application existing code and test if any interfaces were changed
+  \item Implement and test new features in the web application.
+\end{enumerate}
+
+All new features added in library and the web application will be tested at the time of development. To ensure this, three tools are used:
+\begin{itemize}
+  \item \textbf{Git \& Github Pull requests (PR)}: development will be done using the Git Version Control System. All new features will be developed on a separate branch than master, and to get them in master a new PR will be submitted on GitHub.
+  \item \textbf{Travis} is a continuous integration system that will execute all tests from any Git commit. This will ensure that all features added are working according to the tests, and that existing features are not affected by the new changes.
+  \item \textbf{Codecov} is a tool that counts the code coverage of code from a PR. Whenever a new commit is pushed to a PR, codecov's code coverage is recalculated and a message is left on the PR.
+\end{itemize}
+Both Travis and CodeCoverage, will provide \textit{checks} on Github PRs that are required for a PR to be merged.
+
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=(\linewidth / 3 * 2)]{Chapters/3-RequirementAndSpecifications/github_checks.png}
+    \caption{Example of GitHub PR checks}
+    \label{fig:create_assignment}
+\end{figure}
+
 \subsection{Platform dependencies}
 
 The application (including the library) has only two dependencies:

@@ -1,4 +1,4 @@
-\chapter{Implementation and testing of the grading library}
+\chapter{Implementation}
 
 \section{Connecting to a MySQL server} \label{ch:impllib:sec:connecting}
 To connect to a MySQL server, the application uses the Ruby library mysql2. The library, or gem as it's called in Ruby, provides the implementation for connecting, querying and retrieving results from a MySQL server. mysql2 is a binding to MySQL's C library libmysql. mysql2 is the more modern and lean version of the mysql version. Compared to mysql gem, mysql2 gem can be 2 times faster and is built with Ruby in mind. Furthermore, mysql2 is also much more popular with over 42 million downloads on RubyGems, compared to mysql's 8 million downloads.
@@ -46,15 +46,18 @@ end
 Considering the fact that the library executes arbitrary queries, the risks associated with malicious SQL are significant. The application never returns back the query results which means that the potential for data leaking through this does not exist. However, an arbitrary query can destroy or modify other databases on the MySQL server. Therefore, the library must take extra precautions as it deals with unchecked user code. To prevent malicious actions, we create a new MySQL user that only has permission for the newly created database.
 %TC:ignore
 \begin{listing}
-    \begin{minted}{ruby}
+\begin{minted}{ruby}
 @client.query("CREATE USER IF NOT EXISTS `#{@database}`;")
 @client.query("GRANT ALL PRIVILEGES ON `#{@database}`.* TO `#{@database}` WITH GRANT OPTION;")
-    \end{minted}
-    \caption{Creating a new user with permissions for the new database}
-    \label{fig:creating_new_user}
+\end{minted}
+\caption{Creating a new user with permissions for the new database}
+\label{fig:creating_new_user}
 \end{listing}
 %TC:endignore
-All used queries are performed using this user, instead of using the root one. The temporaray user is also deleted at the end of the compile/ assessment execution. This way, the user input can only damage the created database for his assessment. However, this is not an issue considering these are short-lived databases which are destroyed at the end of the assessment.
+All used queries are performed using this user, instead of using the root one. The temporary user is also deleted at the end of the compile/ assessment execution. This way, the user input can only damage the created database for his assessment. However, this is not an issue considering these are short-lived databases which are destroyed at the end of the assessment.
+
+The only way to get around the limitation of the restricted user would be to use a different user. Changing the user in MySQL is not possible through a MySQL command. The only possible way would be to use the \texttt{system} command which executes bash code in combination with the \texttt{mysql -uroot --password} bash command if they knew the root password, but not the url of the database. However, the \texttt{system} command is only available on connections opened with the \texttt{mysql} bash command, which is not the case for \texttt{mysql2} - so users can not exploit this method. Furthermore, the user has limited permissions so he can not run commands such as \mintinline{mysql}{SET PASSWORD} to change existing users.
+
 
 
 \section{Parsing and transforming queries}
@@ -175,3 +178,5 @@ In order to accurately compare two queries, we must make the defaults explicit i
 \subsection{Implementing transformations}
 
 \section{Partial grading}
+
+\section{Web application authentication and roles}

@@ -180,3 +180,6 @@ In order to accurately compare two queries, we must make the defaults explicit i
 \section{Partial grading}
 
 \section{Web application authentication and roles}
+Web application is implemented using the devise library. Devise is the most popular authentication library built for Ruby on Rails with over 18000 stars on GitHub and over 33 million downloads on Ruby gems. In addition to a simple login/ logout functionality, devise provides many features out of the box: recovering password, sending and handling confirmation emails, integration with OAuth providers such as Facebook login, etc. An important aspect of any authentication system is how the password are stored in the database. Devise uses the bcrypt algorithm to hash passwords. bcrypt is a password hashing function \citep{wiki:bcrypt} that is used in OpenBSD and Suse Linux and trusted by many big companies such as Dropbox \citep{dropbox:authentication}, in addition to the users of devise and other authentication libraries.
+
+To handle roles the application uses two tools: a role field on the user database, and the pundit library. pundit is a library that provides ''authorization through Object Oriented Design and pure Ruby classes'' \citep{github:pundit}

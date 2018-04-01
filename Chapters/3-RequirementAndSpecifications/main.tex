@@ -1,6 +1,6 @@
 \chapter{Requirements and Specifications} \label{ch:reqandspec}
 
-As mentioned in section \ref{ch:introduction:sec:project_aims}, the overall goal of the application is to build a web application where teachers can create SQL assignments and students can submit solutions which are automatically graded. Therefore, the requirements of the project can be split in two parts: the requirements for the web application, and the requirements for the grading algorithm.
+As mentioned in section \ref{ch:introduction:sec:project_aims}, the overall goal of the application is to build a web application where teachers can create SQL assignments and students can submit solutions which are automatically graded. Therefore, the requirements of the project can be split in two parts: the requirements for the web application, and the requirements for the grading algorithm which can be implemented in a separate application.
 
 \section{Requirements} \label{ch:reqandspec:sec:rec}
 
@@ -22,18 +22,18 @@ As mentioned in section \ref{ch:introduction:sec:project_aims}, the overall goal
   \item Teachers should be able to have a graphical view of the results and download the results in a CSV format. In addition, they should be able to view the results of individual submissions.
 \end{enumerate}
 
-\subsection{Grading SQL library}
+\subsection{Grading library}
 \begin{enumerate}[label=G-\arabic*]
   \item The library should be able to connect to a \text{MySQL} server and execute queries on a given database.
   \item The library should handle any error that might occur when communicating to the database (including failed execution of SQL queries, connection issues, etc.) and not throw an un-handled error.
-  \item The libary should prevent the use of SQL injection and any potential data leak from the database.
+  \item The library should provide a safe way to execute arbitrary queries that prevents any possible malicious actions.
+  \item The library should prevent the use of SQL injection and any potential data leak from the database.
   \item The library should expose a method that allows the compilation of an assignment given a schema query, a seed query and a correct query. The application should return the schema and the data of the database if no errors are encountered. If errors are encountered, then it should return the appropriate error.
+  \item The library should implement a grading algorithm that will return an accurate grade.
   \item The library should be able to canonicalize a query using the transformations described in section \ref{ch:lit:sec:improved_canon}.
-  \item The library can compare the results of two SQL queries and check if they match.
   \item The library should be able to grade a student's SQL submission by comparing to the instructor's SQL after canonicalizing and applying the grading algorithm in \ref{ch:lit:sec:improved_grading}.
-  \item The library should provide a detailed grade which contains the grade of each component.
-  \item The library should provide hints about fixing the student's query if the two queries are different.
-  \item The library should clear all tables and data from a database after the compilation of any assignment or the assessment of a submission.
+  \item The library should provide a detailed explanation of the grade.
+  \item The library should provide hints about how a student could fix his query if the query is wrong.
 \end{enumerate}
 
 \section{Specifications} \label{ch:reqandspec:sec:spec}

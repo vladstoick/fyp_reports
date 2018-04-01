@@ -12,3 +12,5 @@
 *.pyg
 _minted-report/
 **/__latexindent_temp.tex
+*.lol
+*.lof

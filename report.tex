@@ -24,9 +24,16 @@
 \createFrontMatter
 \onehalfspacing
 \tableofcontents
+
+\begingroup
+\listoffigures
+\let\cleardoublepage\relax
+\let\clearpage\relax
+\listoflistings
+\endgroup
+
 \doublespacing
 
-\definecolor{code-background}{gray}{0.97}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Report Content
@@ -38,10 +45,9 @@
 \include{Chapters/3-RequirementAndSpecifications/main}
 \include{Chapters/4-Design/main}
 \include{Chapters/5-Implementation/main}
-\include{Chapters/6-Testing/main}
-\include{Chapters/7-Evaluation/main}
-\include{Chapters/8-ProfessionalIssues/main}
-\include{Chapters/9-Conclusion/main}
+\include{Chapters/6-Evaluation/main}
+\include{Chapters/7-ProfessionalIssues/main}
+\include{Chapters/8-Conclusion/main}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % References
@@ -53,8 +59,10 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Appendices
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%TC:ignore
 \appendix
-% \include{Appendices/appendix}
+\include{Appendices/appendix}
 % \include{Appendices/UserGuide}
 % \include{Appendices/SourceCode}
+%TC:endignore
 \end{document}

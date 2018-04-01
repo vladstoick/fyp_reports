@@ -153,7 +153,7 @@ As the models are also represented in the database, each model will also be repr
 
 The role of views in a \texttt{MVC} application is to render data \citep{ruby_on_rails}. Most of the application is rendered in \texttt{HTML} (using \mintinline{ruby}{ActionView}) which is displayed in user's browser. The application includes multiple views that serve different purposes: displaying forms, displaying challenge details, etc.
 
-\subsection{Controllers}
+\subsection{Controllers} \label{ch:design:web:controller}
 
 The role of controllers is to \textit{orchestrate} the application. They receive user input (in the form of HTTP requests in the case of Ruby on Rails applications) and returns the correct views which display the correct models \citep{ruby_on_rails_book}. Controllers are implemented as subclasses of \mintinline{ruby}{ActionController::Base} in \texttt{RoR}. This super-class already knows how to handle HTTP requests and return the response to the user. In general, controllers in Ruby on Rails implement the Representational State Transfer (REST) actions. RESTful web services make use of the HTTP methods as following \citep{rodriguez2008restful}:
 

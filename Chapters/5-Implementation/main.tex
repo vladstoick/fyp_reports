@@ -1,6 +1,6 @@
-\chapter{Implementation}
+\chapter{Implementation and testing}
 
-\section{Connecting to a MySQL server} \label{ch:impllib:sec:connecting}
+\section{Connecting to a MySQL server and executing queries} \label{ch:impllib:sec:connecting}
 To connect to a MySQL server, the application uses the Ruby library mysql2. The library, or gem as it's called in Ruby, provides the implementation for connecting, querying and retrieving results from a MySQL server. mysql2 is a binding to MySQL's C library libmysql. mysql2 is the more modern and lean version of the mysql version. Compared to mysql gem, mysql2 gem can be 2 times faster and is built with Ruby in mind. Furthermore, mysql2 is also much more popular with over 42 million downloads on RubyGems, compared to mysql's 8 million downloads.
 
 To connect to a MySQL server, the library requires the address and port of the server, and an account and password. The account must be the root user or at least one that has the permission to create and drop databases, to create and drop users, and to grant permissions to an user.
@@ -81,8 +81,7 @@ In the end, due to the issues described previously, a decision was made to conti
 The process of adding a new feature was formed of multiple parts:
 \begin{enumerate}
     \item Create a \mintinline{ruby}{Node} class representing the new clause, if a new clause was implemented. A \mintinline{ruby}{Node} represents an element of a query: a number, a word, a condition, etc. For instance, the newly created \texttt{LIMIT} node has the following structure:
-    \begin{listing}[H]
-        \centering
+    \begin{listing}[H]\centering
 \begin{minted}{ruby}
 class LimitClause < Node
     def initialize(limit, offset)
@@ -112,9 +111,10 @@ end
 \end{listing}
 \end{enumerate}
 
-\subsection{Transforming queries}
+\subsection{Using sql-parser to parse queries}
 
-sql-parser also provides a way to transform a parsed query (which is now a combination of multiple Nodes) back to a SQL query. Unfortunately, the process of internally modifying the structure of a query is not well-defined and there is no public interface exposed. Each node has one or more private instance variable that represent the values of the Node. For instance, the limit node shown in listing \ref{fig:limit_clause}, has two such variables: limit and offset. sql-parser does not provide a way to change these properties as all Nodes just expose a reader method (set using \mintinline{ruby}{attr_reader}). Fortunately, ruby provides a \mintinline{ruby}{instance_variable_set} method while allows anyone with a reference to an object to change that object's internal variables even if they are private and no setter is exposed. It is worth mentioning that while this approach might work, the use of this method \mintinline{ruby}{instance_variable_set} goes against the principle of encapsulation, and might mean that a future update to the library can lead to errors, if the internal structure of Nodes is modified.
+\subsection{Using sql-parser to change queries}
+sql-parser also provides a way to change a parsed query (which is now a combination of multiple Nodes) back to a SQL query. Unfortunately, the process of internally modifying the structure of a query is not well-defined and there is no public interface exposed. Each node has one or more private instance variable that represent the values of the Node. For instance, the limit node shown in listing \ref{fig:limit_clause}, has two such variables: limit and offset. sql-parser does not provide a way to change these properties as all Nodes just expose a reader method (set using \mintinline{ruby}{attr_reader}). Fortunately, ruby provides a \mintinline{ruby}{instance_variable_set} method while allows anyone with a reference to an object to change that object's internal variables even if they are private and no setter is exposed. It is worth mentioning that while this approach might work, the use of this method \mintinline{ruby}{instance_variable_set} goes against the principle of encapsulation, and might mean that a future update to the library can lead to errors, if the internal structure of Nodes is modified.
 
 \begin{listing}
 \begin{minted}{ruby}
@@ -135,12 +135,60 @@ As previously mentioned in section \ref{ch:lit:sec:improved_canon}, the library 
 \subsection{Transforming \mintinline{mysql}{*} to all columns}
 To transform \mintinline{mysql}{*} to MySQL, the library uses the fact that it doesn't need to support sub-queries. That means that it can simply look at what tables are selected and then perform \mintinline{mysql}{SHOW COLUMNS FROM table_name} on each table to get the full list of columns for each table. The library will then simply update the list of columns (initially represented by a \mintinline{mysql}{*}) to the new list of columns which contain the full list of \texttt{table\_name.column} for each selected table.
 
+\begin{listing}
+\begin{minted}{ruby}
+new_columns = table_list.map do |table|
+  columns_query = "SHOW COLUMNS from #{table}"
+  columns = @connection.query(columns_query).map { |k| k["Field"] }
+
+  columns.map do |column_name|
+    SQLParser::Statement::QualifiedColumn.new(
+      SQLParser::Statement::Table.new(table),
+      SQLParser::Statement::Column.new(column_name)
+    )
+  end
+end.flatten
+\end{minted}
+\caption{Getting the full list of columns for a query}
+\end{listing}
+
 \subsection{Transforming ambigous columns to unambigous columns}
+Transforming ambiguous columns to unambiguous columns is done in a similar way as the previous transformations. The transformation makes use of two important aspects:
+\begin{enumerate}
+    \item One can determine the full list of columns for each table expression component, by running \mintinline{mysql}{SHOW COLUMNS FROM table_name}.
+    \item An ambiguous column can belong to a single table from a query. If a column cannot be made qualified, then MySQL will automatically return the \textit{column xx in field list is ambiguous''} error.
+\end{enumerate}
+
+Therefore to transform an ambiguous column we must go through the full list of columns of each table until we find a match. We then transform the ambiguous column to a qualified column. This process can be seen in listing \ref{fig:find_table}.
+
+An additional type of ambiguous column type is the position reference one which is found in the GROUP and ORDER clauses. In these two clauses, one can write \mintinline{mysql}{ORDER BY 2} where 2 references the second column from the select list. To find the qualified column that the position column references we need to look at the select list (after it was transformed to qualified columns) and select the right position: \mintinline{ruby}{@parsed_query.query_expression.list.columns[column.value - 1]} (position columns start at index 1, while arrays start at 0 in ruby)
+
+Finally, the library also considers the aggregate column types which inside might contain a ambiguous column as well. Aggregate columns are of type \mintinline{ruby}{SQLParser::Statement::Aggregate} which has an attribute of type column. Therefore, we need to apply the same transformation to the inner column attribute.
+
+In sql-parser, unqualified columns have the parsed node type \mintinline{ruby}{SQLParser::Statement::Column}, while qualified columns have the parsed node type \mintinline{ruby}{SQLParser::Statement::QualifiedColumn}.
+
+%TC:ignore
+\begin{listing}
+\begin{minted}{ruby}
+def find_table_for(column_name)
+  table_list.detect do |table|
+    columns_query = "SHOW COLUMNS from #{table}"
+    columns = @connection.query(columns_query).map { |k| k["Field"] }
+    columns.include?(column_name)
+  end
+end
+\end{minted}
+\caption{Determining the table for an ambigous column with name}
+\label{fig:find_table}
+\end{listing}
+%TC:endignore
+
+
 \subsection{Transforming equivalent columns}
 
 The transformation of equivalent columns is a two step process. First, the library determines which components are equivalent, and after that it updates all column references to the minimum lexicographically string from the equivalence group.
 
-When determining the equivalent columns, the library builds a undirected graph $G(V, E)$:
+To determine the equivalent columns the library builds a undirected graph $G(V, E)$:
 \begin{enumerate}
     \item $V$: the list of all columns used in the table expression
     \item $E$: there is an edge between $v_1$ and $v_2$ if and only if in the table expression there is a join condition based on the equality of $v_1$ and $v_2$. To build the edges, the library goes over all join conditions from the SQL statement and builds the edges as described above.
@@ -164,22 +212,105 @@ LEFT JOIN table3 on table2.fid = table3.random_id
 \caption{Example of equivalence graph}
 \end{figure}
 
+To build the graph we use a Ruby library called RGL. RGL provides the implementation of various graph structures and graph algorithms (including the SCC algorithm).
+
+\begin{listing}
+\begin{minted}{ruby}
+equivalence = equivalences_list.detect do |equivalences|
+  equivalences.include?(column.to_sql)
+end
+
+if equivalence.present?
+  # transform qualified columns in sql form to two strings representing the
+  # table and the column name
+  table_name, column_name = equivalence.sort.first.remove("`").split(".")
+
+  SQLParser::Statement::QualifiedColumn.new(
+    SQLParser::Statement::Table.new(table_name),
+    SQLParser::Statement::Column.new(column_name)
+  )
+else
+  column
+end
+\end{minted}
+\caption{Transforming equivalent columns}
+\end{listing}
+
 \subsection{Making defaults explicit}
 
 Every \texttt{MySQL} query has certain default attributes. For instance, every \texttt{MySQL SELECT} query has a default uniqueness filter of \mintinline{mysql}{ALL}. That means while explicitly mentioning \mintinline{mysql}{ALL} will have no effect, it does not mean that it is making the query wrong.
 
 In order to accurately compare two queries, we must make the defaults explicit in both queries.
 
-\subsection{Transforming \mintinline{mysql}{BETWEEN}}
-\subsection{Transforming \mintinline{mysql}{NOT}}
-\subsection{Transforming \mintinline{mysql}{>}}
+\subsection{Transforming conditions from WHERE and HAVING}
+Both WHERE and HAVING clauses can be represented as trees.
+\subsubsection{Transforming conditions with }
+\subsubsection{Transforming \mintinline{mysql}{NOT}}
+\subsubsection{Transforming \mintinline{mysql}{>}}
 
 
 \subsection{Implementing transformations}
 
 \section{Partial grading}
 
-\section{Web application authentication and roles}
+\section{Web application user management}
+\subsection{Authentication}
 Web application is implemented using the devise library. Devise is the most popular authentication library built for Ruby on Rails with over 18000 stars on GitHub and over 33 million downloads on Ruby gems. In addition to a simple login/ logout functionality, devise provides many features out of the box: recovering password, sending and handling confirmation emails, integration with OAuth providers such as Facebook login, etc. An important aspect of any authentication system is how the password are stored in the database. Devise uses the bcrypt algorithm to hash passwords. bcrypt is a password hashing function \citep{wiki:bcrypt} that is used in OpenBSD and Suse Linux and trusted by many big companies such as Dropbox \citep{dropbox:authentication}, in addition to the users of devise and other authentication libraries.
 
-To handle roles the application uses two tools: a role field on the user database, and the pundit library. pundit is a library that provides ''authorization through Object Oriented Design and pure Ruby classes'' \citep{github:pundit}
+\subsection{Authorization}
+To handle roles the application uses two tools: a role field on the user database, and the pundit library. pundit is a library that provides ''authorization through Object Oriented Design and pure Ruby classes'' \citep{github:pundit}. Every user has a role that is either student or admin.
+
+Pundit defines the concept of policies which describe the authorization policy for a model. That means that every model will have an associated policy. A policy has the following attributes:
+
+\begin{itemize}
+    \item A policy is instantiated in the controller with the current user and optionally with an instance of an object.
+    \item The pundit policy files define methods whose naming convention follows the Ruby on Rails controller action names described in section: \ref{ch:design:web:controller}. That means that a policy defines the following methods: \mintinline{ruby}{def index?}, \mintinline{ruby}{def show?}, \mintinline{ruby}{def create?}, \mintinline{ruby}{def new?}, \mintinline{ruby}{def update?}, \mintinline{ruby}{def edit?}, \mintinline{ruby}{def destroy?}. The method returns whether the user has access to perform the action. An example of this can be seen in listing \ref{fig:policy_challenge}, which makes it clear that only admins can crete new challenges.
+
+\begin{listing}
+\begin{minted}{ruby}
+class ChallengePolicy < ApplicationPolicy
+  # ...
+
+  def create?
+    user.admin?
+  end
+
+  # ...
+end
+\end{minted}
+\caption{Example policy for Challenge creation}
+\label{fig:policy_challenge}
+\end{listing}
+    \item The pundit method provides the authorize a authorize method to a Ruby on Rails controllers that automatically instantiates a policy, and automatically calls the correct method. An example of the usage of the authorize method is seen in listing \ref{fig:policy_challenge_usage} where the authorize method is called to ensure that the user has access to the challenge. If the user is not authorized, then a response with HTTP code 403 is returned to the user (HTTP code 403 means status is ''Forbidden'').
+\begin{listing}[H]
+\begin{minted}{ruby}
+def show
+  @challenge = Challenge.find_by!(id: params.require(:id))
+  authorize @challenge
+  # ...
+end
+\end{minted}
+\caption{Example of policy usage}
+\label{fig:policy_challenge_usage}
+\end{listing}
+\end{itemize}
+
+\section{Testing}
+
+Testing any software is an essential step in the development process. The purpose of software testing is to validate that the software is behaving as intended \citep{lit:software_testing}. Testing can also be used to check if the requirements have been correctly implemented. As previously mentioned in the development process section (\ref{ch:reqandspec:sec:spec:subsec:dev_process}), testing has been an integral part of the project, with new tests written for all new features added.
+
+Testing is especially important in dynamic languages like Ruby where due to the lack of types and a compile step. Ruby uses what is sometimes called \textit{duck typing} which is enforced using the duck test: ''If it walks like a duck and it quacks like a duck, then it must be a duck.'' \citep{wiki:duck_typing}. That means that Ruby only cares if an object implements a method, it does not care about the type of the object on which the method is called. While this might help developers move faster, duck typing can lead to an increased amount of errors as no type checking is done until runtime. In addition, without a proper test suite, refactoring can become a nightmare for someone working in a dynamic programming language as he has no confidence that the changes he is making will not affect the application.
+
+To ensure that the software is working according to the requirements and that future refactors will be made easily, the project uses two types of testing: unit testing and integration testing.
+
+
+\subsection{Unit testing}
+
+Unit testing refers to the testing of individual units of code or groups
+of related units \citep{unit_testing}. The purpose of unit testing is to
+make sure the code meets the specifications \citep{Olan2003}.
+
+
+In order to unit test the two parts of the application, we are using RSpec which is a DSL testing tool for Ruby \citep{wiki:rspec}.
+
+\subsection{Integration testing}

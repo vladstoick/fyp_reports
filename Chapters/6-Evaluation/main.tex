@@ -1,0 +1,44 @@
+\chapter{Evaluation}
+
+\section{Comparing the final application with requirements}
+
+\section{Testing the application against exercies from existing sources}
+Although software testing is an important part of testing any application, a more important evaluation part is looking at how the application performs against real-life examples. For this, we have tested the application against different assignment from various sources. We looked at exercises from the following two sources.
+
+\begin{itemize}
+    \item Exercises from \textit{Database System Concepts, 5th edition} written by Abraham Silberschatz, Henry F. Korth, S. Sudarshan.
+    \item Exercises from Hackerrank \texttt{SQL} course.
+\end{itemize}
+
+We tried to understand how will our application be able to handle actual usage if it were to be deployed in production. We compared the ability of the app to handle the solution queries for each
+
+\subsection{Comparing the project to a commercial tool for teaching SQL}
+
+As mentioned in \ref{ch:lit:sec:tutor:comercial}, HackerRank provides multiple \texttt{SQL} exercises that can help a student practice his SQL abilities.
+
+As previously described, HackerRank only provides a Boolean true/false assessment result for any submission. The functionality can be fully replicated in the application built. However, a more interesting evaluation is related to how well the computer can provide a grade and what's the quality of the components.
+
+To assess the accuracy of the algorithm built, an evaluation of its ability to extract comparable components has been performed. We can define  a comparable component as one that was either canonicalized or cannot be rewritten in any other way. This aspect is the the most important one of the application, as it influences both the grade, as well as the hints received.
+
+HackerRank separates their SQL course in 4 parts as following:
+\begin{enumerate}
+    \item \textbf{Basic Select Queries}: which contains fairly basic select queries which only query one single table. In general, they the student's ability to use \mintinline{mysql}{WHERE} clauses and to select the right columns.
+    \item \textbf{Advance Select Queries}: which contains 5 advanced exercises which involves sub-queries, and the use of \mintinline{mysql}{CASE} statements.
+    \item \textbf{Basic Join}: which tests student's ability to user \mintinline{mysql}{JOIN}.
+\end{enumerate}
+
+For the evaluation process we have used solutions provided by GitHub user \textit{Larkin22} made available at \url{https://github.com/Larkin22/HackerRank---SQL-Solutions}.
+
+\subsubsection{Basic Select Queries}
+
+The algorithm built was able to fully canonicalize the queries and extract the components
+
+\subsection{Overview}
+
+Overall, the algorithm performed very well in the basic queries, but had issues in the more advanced. The most prevalent issues were encountered in the following two areas:
+\begin{itemize}
+    \item Handling advanced queries that include sub-queries. As previously mentioned, the grading algorithm provides no support for handling sub-queries. If sub-queries are used, the application will revert back to a simple check of the results which matches HackerRank's algorithm's behavior.
+    \item Handling components that cannot be easily canonicalized or compared.
+\end{itemize}
+
+It is clear that as queries go more complex, the likelihood of using sub-queries also increases which makes the algorithm unusable in these cases. However,

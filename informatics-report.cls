@@ -11,7 +11,8 @@
 \usepackage{url}
 \usepackage{verbatim}
 \usepackage{listings}
-\usepackage{minted}
+\usepackage[newfloat, draft=true]{minted}
+\setminted{autogobble}
 \setminted{breaklines}
 \usepackage{amssymb}
 \usepackage{pifont}

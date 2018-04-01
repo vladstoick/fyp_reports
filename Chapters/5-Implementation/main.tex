@@ -243,7 +243,26 @@ Every \texttt{MySQL} query has certain default attributes. For instance, every \
 In order to accurately compare two queries, we must make the defaults explicit in both queries.
 
 \subsection{Transforming conditions from WHERE and HAVING}
-Both WHERE and HAVING clauses can be represented as trees.
+Both the WHERE and HAVING clauses are represented by a Boolean expression tree. When transforming these clauses it is essential to ensure that the structure of the expression is not altered - that is the before and after expressions are equivalent. To do this, the algorithm traverses the tree recursively and only replaces leafs with either another leaf (in the case of transforming a condition to another) or to a inner node that has two leaves (in the case of transforming a condition to multiple another).
+
+\begin{listing}
+\begin{minted}{ruby}
+def transform_between_queries(statement)
+  if statement.is_a?(SQLParser::Statement::SearchCondition)
+    statement.class.new(
+      transform_between_queries(statement.left),
+      transform_between_queries(statement.right)
+    )
+  elsif statement.is_a?(SQLParser::Statement::Between)
+    transform_between_query(statement)
+  else
+    statement
+  end
+end
+\end{minted}
+\caption{Example of traversing the tree}
+\end{listing}
+
 \subsubsection{Transforming conditions with }
 \subsubsection{Transforming \mintinline{mysql}{NOT}}
 \subsubsection{Transforming \mintinline{mysql}{>}}
@@ -270,11 +289,9 @@ Pundit defines the concept of policies which describe the authorization policy f
 \begin{minted}{ruby}
 class ChallengePolicy < ApplicationPolicy
   # ...
-
   def create?
     user.admin?
   end
-
   # ...
 end
 \end{minted}

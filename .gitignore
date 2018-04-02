@@ -14,3 +14,6 @@ _minted-report/
 **/__latexindent_temp.tex
 *.lol
 *.lof
+sharelatex-git.py
+sharelatex-git
+.sharelatex-git

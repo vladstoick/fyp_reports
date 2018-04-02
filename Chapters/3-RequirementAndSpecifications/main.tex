@@ -1,6 +1,8 @@
 \chapter{Requirements and Specifications} \label{ch:reqandspec}
 
-As mentioned in section \ref{ch:introduction:sec:project_aims}, the overall goal of the application is to build a web application where teachers can create SQL assignments and students can submit solutions which are automatically graded. Therefore, the requirements of the project can be split in two parts: the requirements for the web application, and the requirements for the grading algorithm which can be implemented in a separate application.
+As mentioned in section \ref{ch:introduction:sec:project_aims}, the overall goal of the application is to build a web application where teachers can create SQL assignments and students can submit solutions which are automatically graded. Therefore, the requirements of the project can be split in two parts: the requirements for the web application, and the requirements for the grading algorithm which can be implemented in a separate application. 
+
+The library will be the main output of the project with the web application being just a basic interface for interacting with the library.
 
 \section{Requirements} \label{ch:reqandspec:sec:rec}
 
@@ -24,16 +26,14 @@ As mentioned in section \ref{ch:introduction:sec:project_aims}, the overall goal
 
 \subsection{Grading library}
 \begin{enumerate}[label=G-\arabic*]
-  \item The library should be able to connect to a \text{MySQL} server and execute queries on a given database.
-  \item The library should handle any error that might occur when communicating to the database (including failed execution of SQL queries, connection issues, etc.) and not throw an un-handled error.
-  \item The library should provide a safe way to execute arbitrary queries that prevents any possible malicious actions.
-  \item The library should prevent the use of SQL injection and any potential data leak from the database.
+  \item The library should be able to connect to a \text{MySQL} server
+  \item The library should handle any error that might occur when communicating to the database (including failed execution of SQL queries, connection issues, etc.) and not throw any unhandled error.
+  \item The library should provide a safe way to execute arbitrary queries that prevents any possible malicious actions (including SQL injection).
+  \item The library should implement a grading algorithm for assessing SQL assignments. \label{req:grading}
+  \item The library should provide a detailed explanation of the grade and how it was assessed. \label{req:grading_explanation}
+  \item The library should provide hints about how a student could fix his query if the query is wrong. \label{req:grading_hint}
   \item The library should expose a method that allows the compilation of an assignment given a schema query, a seed query and a correct query. The application should return the schema and the data of the database if no errors are encountered. If errors are encountered, then it should return the appropriate error.
-  \item The library should implement a grading algorithm that will return an accurate grade.
-  \item The library should be able to canonicalize a query using the transformations described in section \ref{ch:lit:sec:improved_canon}.
-  \item The library should be able to grade a student's SQL submission by comparing to the instructor's SQL after canonicalizing and applying the grading algorithm in \ref{ch:lit:sec:improved_grading}.
-  \item The library should provide a detailed explanation of the grade.
-  \item The library should provide hints about how a student could fix his query if the query is wrong.
+  \item The library should expose a method that allows the assessment of a submissions given a schema query, a seed query, the instructor's correct query and the submissions' query.  The assessment should be done with the grading algorithm implemented for requirement \ref{req:grading}. The result of the method should be the grade, the explanation implemented for \ref{req:grading_explanation} and the hint returned from the implementation of \ref{req:grading_hint}.
 \end{enumerate}
 
 \section{Specifications} \label{ch:reqandspec:sec:spec}
@@ -97,18 +97,18 @@ The application (including the library) has only two dependencies:
   \hline
   \textbf{R no.} & \textbf{Requirement details} & \textbf{Specification} \\\hline
   \endhead
-  R-1 & The web application should be able to store data in a database & Use ActiveRecord to store and access data in a MySQL server \\\hline
-  R-2 & The web application should allow users to log-in and keep their data across sessions. & Use devise library for authentication \\\hline
-  R-3 &  The web application should allow users to have different roles within the application (e.g.Student/ Teacher/ TA) & Use pundit library for user roles management \\\hline
-  R-4 &  A teacher should be able to create assignments by giving a title, a description, and a SQL query that creates the tables and the relations between them, a SQL query that seeds the table with initial data, and a SQL query which represents the correct answer for the assignment. & Provide a web form built in Bootstrap that provides a code editor using codemirror \\\hline
+  R-1 & The web application should be able to store data in a database & Use Ruby on Rails' ActiveRecord to store and access data in a MySQL server \\\hline
+  R-2 & The web application should allow users to log-in and keep their data across sessions. & Use devise library for authentication and provide sign-in and sign-up functionality using devise\\\hline
+  R-3 &  The web application should allow users to have different roles within the application (e.g.Student/ Teacher/ TA) & Use pundit library for user roles management and authorization\\\hline
+  R-4 &  A teacher should be able to create assignments by giving a title, a description, and a SQL query that creates the tables and the relations between them, a SQL query that seeds the table with initial data, and a SQL query which represents the correct answer for the assignment. & Provide a web form built where teachers can create new assignments. The form will be built using Bootstrap, and the code editors should use codemirror to provide code syntax highlighting. \\\hline
   R-5 &  The application should compile the queries provided and if no errors are shown, it will save the assignment in the database and display the schema of the database and the data from it. & Use the compile method provide by the library and defined and display any error that may occur, otherwise save the record in the database. \\\hline
-  R-6 & The teacher should allow editing the assignments after they are created. & Updates the card in the database and re-compiles the query. \\\hline
+  R-6 & The teacher should allow editing the assignments after they are created. & Recompile the query and update the assignment in the database if no errors are encountered. \\\hline
   R-7 & The teacher should allow the deletion assignments after they are created. & Deletes the challenge from database \\\hline
   R-8 & A student should be able to provide solutions to assignments by submitting a SQL query. The web application should return the results instantly to the students after it assess the query. If any compilation errors are returned, they will be shown to the student. & Provide a web form built in Bootstrap that provides a code editor using codemirror. Assess the query using the assess method provided by grading library. Save all submissions in the database after they have been assessed. \\\hline
   R-9 & A student should be able to view the schema of the database for the assignment. & Render a HTML views that contains the schema of the database and provide a form written in Bootstrap and codemirror where they provide solutions. \\\hline
   R-10 & A  student  should  be  able  to  see  hints  if  they  make  any  errors,  or  they  can  also  see  a breakdown of the components from the teacher’s query and the ones used by their query. & Display a HTML view based on the results of their submission, after being graded. \\\hline
   R-11 & SQL typing on the web application should be made in a browser based code editor that provides syntax highlighting. & Provide a code editor written in codemirror. \\\hline
-  R-12 & Teachers should be able to have a graphical view of the results and download the results in  a CSV format.   In  addition,  they  should  be  able  to  view  the  results  of  individual submissions. & Provide a download button that gets the best submission of each student for a certain assignment. \\\hline
+  R-12 & Teachers should be able to have a graphical view of the results and download the results in  a CSV format.   In  addition,  they  should  be  able  to  view  the  results  of  individual submissions. & Provide a download CSV button that gets the best submission of each student for a certain assignment. Provide a HTML view that displays the result of a individual submission. \\\hline
 \end{tabularx}
 
 \subsection{Specification for Library}
@@ -117,14 +117,12 @@ The application (including the library) has only two dependencies:
   \hline
   \textbf{R no.} & \textbf{Requirement details} & \textbf{Specification} \\\hline
   \endhead
-G- & The library should be able to connect to a MySQL server and execute queries on a given database. & Connect to a MySQL database using Ruby library mysql2 \\\hline
-G- & The library should handle any error that might occur when communicating to the database (including failed execution of SQL queries, connection issues, etc.) and not throw an un-handled error. & Handle errors returned by mysql2 \\\hline
-G- & The libary should prevent the use of SQL injection and any potential data leak from the database. & .\\\hline
-G- & The library should expose a method that allows the compilation of an assignment given a schema query, a seed query and a correct query. The application should return the schema and the data of the database if no errors are encountered. If errors are encountered, then it should return the appropriate error. & .\\\hline
-G- & The library should be able to canonicalize a query using the transformations described in section \ref{ch:lit:sec:improved_canon}. & .\\\hline
-G- & The library can compare the results of two SQL queries and check if they match. & .\\\hline
-G- & The library should be able to grade a student's SQL submission by comparing to the instructor's SQL after canonicalizing and applying the grading algorithm in \ref{ch:lit:sec:improved_grading}. & .\\\hline
-G- & The library should provide a detailed grade which contains the grade of each component. & .\\\hline
-G- & The library should provide hints about fixing the student's query if the two queries are different. & .\\\hline
-G- & The library should clear all tables and data from a database after the compilation of any assignment or the assessment of a submission. & .\\\hline
+G-1 & The library should be able to connect to a MySQL server and execute queries on a given database. & Connect to a MySQL database using Ruby library mysql2 \\\hline
+G-2 & The library should handle any error that might occur when communicating to the database (including failed execution of SQL queries, connection issues, etc.) and not throw an un-handled error. & Handle errors returned by mysql2 and return library specific errors. \\\hline
+G-3 & The library should provide a safe way to execute arbitrary queries that prevents any possible malicious actions (including SQL injection). & Execute the queries in a separate database using a user that has restricted permissions. \\\hline
+G-4 & The library should implement a grading algorithm for assessing SQL assignments. & Implement a grading algorithm that follows the grading algorithm defined by XData. That means the grading will compare the components of two canonicalized queries. Therefore, the algorithm will contain two components: the canonicalization of a SQL query and the comparison of components. \\\hline
+G-5 & The algorithm should provide a detailed explanation of the grade and how it was assessed. & Return a grade for each component and the components after they have been canonicalized. \\\hline
+G-6 & The algorithm should provide hints about how a student could fix his query if the query is wrong & Return the most relevant hint for the query. The relevance of the hint will be determined by two factors: the grade of the component, and a predefined importance ordering of components\\\hline
+G-7 & The library should expose a method that allows the compilation of an assignment given a schema query, a seed query and a correct query. The application should return the schema and the data of the database if no errors are encountered. If errors are encountered, then it should return the appropriate error. & Execute the queries and handle any errors if they occur and return them as mentioned in specifications for G-1 and G-2. Extract the tables created in the schema query and then extract the data inserted in the seed query. \\\hline
+G- & The library should expose a method that allows the assessment of a submissions given a schema query, a seed query, the instructor's correct query and the submissions' query.  The assessment should be done with the grading algorithm implemented for requirement \ref{req:grading}. The result of the method should be the grade, the explanation implemented for \ref{req:grading_explanation} and the hint returned from the implementation of \ref{req:grading_hint}. & Execute the queries and handle any errors if they occur and return them as mentioned in specifications for G-1 and G-2. Apply the grading algorithm implemented for G-4 and return the grade, the detailed breakdown of the grade implemented for G-5 and the hint from G-6. \\\hline
 \end{tabularx}

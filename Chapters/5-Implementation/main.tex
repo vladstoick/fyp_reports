@@ -1,6 +1,6 @@
 \chapter{Implementation and testing}
 
-\section{Connecting to a MySQL server and executing queries} \label{ch:impllib:sec:connecting}
+\section{Library: Connecting to a MySQL server and executing queries} \label{ch:impllib:sec:connecting}
 To connect to a MySQL server, the application uses the Ruby library mysql2. The library, or gem as it's called in Ruby, provides the implementation for connecting, querying and retrieving results from a MySQL server. mysql2 is a binding to MySQL's C library libmysql. mysql2 is the more modern and lean version of the mysql version. Compared to mysql gem, mysql2 gem can be 2 times faster and is built with Ruby in mind. Furthermore, mysql2 is also much more popular with over 42 million downloads on RubyGems, compared to mysql's 8 million downloads.
 
 To connect to a MySQL server, the library requires the address and port of the server, and an account and password. The account must be the root user or at least one that has the permission to create and drop databases, to create and drop users, and to grant permissions to an user.
@@ -58,11 +58,9 @@ All used queries are performed using this user, instead of using the root one. T
 
 The only way to get around the limitation of the restricted user would be to use a different user. Changing the user in MySQL is not possible through a MySQL command. The only possible way would be to use the \texttt{system} command which executes bash code in combination with the \texttt{mysql -uroot --password} bash command if they knew the root password, but not the url of the database. However, the \texttt{system} command is only available on connections opened with the \texttt{mysql} bash command, which is not the case for \texttt{mysql2} - so users can not exploit this method. Furthermore, the user has limited permissions so he can not run commands such as \mintinline{mysql}{SET PASSWORD} to change existing users.
 
+\section{Library: Parsing and transforming queries}
 
-
-\section{Parsing and transforming queries}
-
-Part of the canonicalization and grading process, SQL queries will go through multiple transformations after being parsed and separated in independent components. MySQL does not provide an official parser for any programming language, so the library had to use a 3rd party tool.
+Part of the canonicalization and grading process, SQL queries will go through multiple transformations after being parsed and separated in independent components. MySQL does not provide an official parser for any programming language, so the library had to use a 3rd party tool. The advantage of using an existing parser is that we can ignore the implementation details of parsing.
 
 The library initially used the Ruby gem sql-parser. Throughout the development process, there have been multiple problems associated with this tool. Most importantly, the library did not have support for multiple SQL statements that we required. Unfortunately, many issues with sql-parser were discovered only late in the project.
 
@@ -76,11 +74,12 @@ In the end, due to the issues described previously, a decision was made to conti
     \item Support for \mintinline{mysql}{LIMIT} and \mintinline{mysql}{OFFSET}
     \item Support for using a qualified column in \mintinline{mysql}{ORDER BY} clause
     \item Support for using the columns number in \mintinline{mysql}{GROUP} clause
+    \item Support for using subqueries in \mintinline{mysql}{FROM} clause
 \end{itemize}
 
 The process of adding a new feature was formed of multiple parts:
 \begin{enumerate}
-    \item Create a \mintinline{ruby}{Node} class representing the new clause, if a new clause was implemented. A \mintinline{ruby}{Node} represents an element of a query: a number, a word, a condition, etc. For instance, the newly created \texttt{LIMIT} node has the following structure:
+    \item Create a \mintinline{ruby}{Node} class representing the new clause, if a new clause was implemented. A \mintinline{ruby}{Node} represents an element of a query: a clause, a number, a word, a condition, etc. For instance, the newly created \texttt{LIMIT} node has the following structure:
     \begin{listing}[H]\centering
 \begin{minted}{ruby}
 class LimitClause < Node
@@ -111,7 +110,30 @@ end
 \end{listing}
 \end{enumerate}
 
-\subsection{Using sql-parser to parse queries}
+\subsection{Using sql-parser to parse SQL queries}
+Using sql-parser to parse SQL queries is straight forward. The library provides the \mintinline{mysql}{scan_str} which transform a string (the SQL query) into a SQL Abstract Syntax Tree (AST). The AST is formed of multiple nodes. As previously mentioned in the lat section, a node is a component of the clause. The general structure of the AST for a SELECT query has the following structure is represented in figure \ref{fig:select_ast}.
+
+\begin{figure}[ht]
+\centering
+\begin{tikzpicture}[sibling distance=8em,
+  every node/.style = {shape=rectangle, rounded corners,
+    draw, align=center,
+    top color=white, bottom color=blue!20}]]
+  \node { \ttfamily Select }
+    child { node {\ttfamily SelectList} }
+    child { node {\ttfamily TableExpression}
+        child { node {\ttfamily FromClause } }
+        child { node {\ttfamily WhereClause } }
+        child { node {\ttfamily GroupByClause } }
+        child { node {\ttfamily HavingClause } }
+        child { node {\ttfamily LimitClause } } }
+    child { node {\ttfamily Filter} };
+\end{tikzpicture}
+\caption{General structure of the SELECT's AST}
+\label{fig:select_ast}
+\end{figure}
+All the leaves presented in figure \ref{fig:select_ast} also have their nodes. For instance, SelectList has an array of columns which can be of many types (QualifiedColumn, Column, AggregateColumn). In addition, what we previously called Boolean components (WHERE and HAVING) have both subtrees representing the Boolean expression.
+
 
 \subsection{Using sql-parser to change queries}
 sql-parser also provides a way to change a parsed query (which is now a combination of multiple Nodes) back to a SQL query. Unfortunately, the process of internally modifying the structure of a query is not well-defined and there is no public interface exposed. Each node has one or more private instance variable that represent the values of the Node. For instance, the limit node shown in listing \ref{fig:limit_clause}, has two such variables: limit and offset. sql-parser does not provide a way to change these properties as all Nodes just expose a reader method (set using \mintinline{ruby}{attr_reader}). Fortunately, ruby provides a \mintinline{ruby}{instance_variable_set} method while allows anyone with a reference to an object to change that object's internal variables even if they are private and no setter is exposed. It is worth mentioning that while this approach might work, the use of this method \mintinline{ruby}{instance_variable_set} goes against the principle of encapsulation, and might mean that a future update to the library can lead to errors, if the internal structure of Nodes is modified.
@@ -128,9 +150,15 @@ sql-parser also provides a way to change a parsed query (which is now a combinat
 
 After a query is modified, sql-parser exposes a \mintinline{ruby}{.to_sql} method on each Node that can be used to transform a Node to a SQL statement.
 
-\section{Canonicalizing queries}
+\section{Library: handling sub-queries}
 
-As previously mentioned in section \ref{ch:lit:sec:improved_canon}, the library will implement a canonicalization step. The library implements all canonicalizations done by XData and described in section \ref{ch:lit:sec:canonicalization}, and the additional ones presented in section \ref{ch:lit:sec:improved_canon}. All transformations will use sql-parser's transformations ability combined with the ability to make queries on the database.
+Unfortunately, compared to XData, the library can not handle submissions with XData. Some work to implement this has been attempted and is available in the current code: canonicalization of sub-queries, comparison of nested queries, updating sql-parser to support sub-queries in the FROM clause, etc. Unfortunately, this work has been added very late in the project which meant that most existing work had to be redone. The work had to be redone because some parts of the library made the assumption that no sub-queries are present. For instance, the library contains multiple canonicalizations that make use of nested sub-queries. 
+
+If the library will encounter a sub-query, it will return an error explaining that such SQL queries are not currently supported.
+
+\section{Library: Canonicalizing queries}
+
+As previously mentioned in section \ref{ch:lit:sec:improved_canon}, the library will implement a canonicalization step. The library implements all canonicalizations done by XData and described in section \ref{ch:lit:sec:canonicalization}, and the additional ones presented in section \ref{ch:lit:sec:improved_canon}. All transformations use sql-parser's transformations ability combined with the ability to make queries on the database.
 
 \subsection{Transforming \mintinline{mysql}{*} to all columns}
 To transform \mintinline{mysql}{*} to MySQL, the library uses the fact that it doesn't need to support sub-queries. That means that it can simply look at what tables are selected and then perform \mintinline{mysql}{SHOW COLUMNS FROM table_name} on each table to get the full list of columns for each table. The library will then simply update the list of columns (initially represented by a \mintinline{mysql}{*}) to the new list of columns which contain the full list of \texttt{table\_name.column} for each selected table.
@@ -242,10 +270,10 @@ Every \texttt{MySQL} query has certain default attributes. For instance, every \
 
 In order to accurately compare two queries, we must make the defaults explicit in both queries.
 
-\subsection{Transforming conditions from WHERE and HAVING}
-Both the WHERE and HAVING clauses are represented by a Boolean expression tree. When transforming these clauses it is essential to ensure that the structure of the expression is not altered - that is the before and after expressions are equivalent. To do this, the algorithm traverses the tree recursively and only replaces leafs with either another leaf (in the case of transforming a condition to another) or to a inner node that has two leaves (in the case of transforming a condition to multiple another).
+\subsection{Transforming conditions from WHERE, HAVING, and JOIN contiions}
+The WHERE and HAVING clauses and the JOIN conditions are represented by a Boolean expression tree. When transforming these clauses it is essential to ensure that the structure of the expression is not altered - that is the before and after expressions are equivalent. To do this, the algorithm traverses the tree recursively and only replaces leafs with either another leaf (in the case of transforming a condition to another) or to a inner node that has two leaves (in the case of transforming a condition to multiple another).
 
-\begin{listing}
+\begin{listing}[H]
 \begin{minted}{ruby}
 def transform_between_queries(statement)
   if statement.is_a?(SQLParser::Statement::SearchCondition)
@@ -263,16 +291,54 @@ end
 \caption{Example of traversing the tree}
 \end{listing}
 
-\subsubsection{Transforming conditions with }
-\subsubsection{Transforming \mintinline{mysql}{NOT}}
-\subsubsection{Transforming \mintinline{mysql}{>}}
+\subsubsection{Transforming \mintinline{mysql}{BETWEEN} predicate}
 
+A \mintinline{mysql}{column BETWEEN a AND B} predicate will be transformed to two separate predicates: \mintinline{mysql}{column >= a} and \mintinline{mysql}{column <= b}. 
 
-\subsection{Implementing transformations}
+\begin{listing}[ht]
+\begin{minted}{ruby}
+def transform_between_query(predicate)
+  SQLParser::Statement::And.new(
+    SQLParser::Statement::GreaterOrEquals.new(predicate.left, predicate.min),
+    SQLParser::Statement::LessOrEquals.new(predicate.left, predicate.max)
+  )
+end
+\end{minted}
+\caption{Transforming a BETWEEN predicate}
+\label{fig:transforming_a_betweeb}
+\end{listing}
 
-\section{Partial grading}
+\subsubsection{Transforming \mintinline{mysql}{NOT} comparison predicates}
 
-\section{Web application user management}
+\begin{listing}[H]
+\begin{minted}{ruby}
+def transform_not(not_statement)
+  # Greater
+  if not_statement.value.is_a?(SQLParser::Statement::Greater)
+    SQLParser::Statement::LessOrEquals.new(not_statement.value.left, not_statement.value.right)
+  elsif not_statement.value.is_a?(SQLParser::Statement::GreaterOrEquals)
+    SQLParser::Statement::Less.new(not_statement.value.left, not_statement.value.right)
+  # Less
+  elsif not_statement.value.is_a?(SQLParser::Statement::Less)
+    SQLParser::Statement::GreaterOrEquals.new(not_statement.value.left, not_statement.value.right)
+  elsif not_statement.value.is_a?(SQLParser::Statement::LessOrEquals)
+    SQLParser::Statement::Greater.new(not_statement.value.left, not_statement.value.right)
+  else
+    not_statement
+  end
+end
+\end{minted}
+\caption{Transforming NOT}
+\label{fig:transforming_not}
+\end{listing}
+
+\subsubsection{Transform \mintinline{mysql}{>} and \mintinline{mysql}{>=} to \mintinline{mysql}{<} and \mintinline{mysql}{<=}}
+
+\section{Library: Extracting attributes from a canonicalized query}
+
+\section{Library: Partial grading}
+
+\section{Web application: user management}
 \subsection{Authentication}
 Web application is implemented using the devise library. Devise is the most popular authentication library built for Ruby on Rails with over 18000 stars on GitHub and over 33 million downloads on Ruby gems. In addition to a simple login/ logout functionality, devise provides many features out of the box: recovering password, sending and handling confirmation emails, integration with OAuth providers such as Facebook login, etc. An important aspect of any authentication system is how the password are stored in the database. Devise uses the bcrypt algorithm to hash passwords. bcrypt is a password hashing function \citep{wiki:bcrypt} that is used in OpenBSD and Suse Linux and trusted by many big companies such as Dropbox \citep{dropbox:authentication}, in addition to the users of devise and other authentication libraries.
 
@@ -323,11 +389,29 @@ To ensure that the software is working according to the requirements and that fu
 
 \subsection{Unit testing}
 
-Unit testing refers to the testing of individual units of code or groups
-of related units \citep{unit_testing}. The purpose of unit testing is to
-make sure the code meets the specifications \citep{Olan2003}.
+Unit testing refers to the testing of individual units of code or groups of related units \citep{unit_testing}. The purpose of unit testing is to make sure the code meets the specifications \citep{Olan2003}. In order to unit test the two parts of the application, we are using RSpec which is a DSL testing tool for Ruby \citep{wiki:rspec}. Overall, the library and the web application have in total over 250 unit tests.
 
+In Ruby and RSpec, tests for a class go in an associated \texttt{class\_name\_spec.rb} located in the \texttt{spec/} folder. RSpec's DSL provides multiple methods that allow most unit tests to be easy to read and understand as the resulting format of unit tests is similar to an English sentence.
 
-In order to unit test the two parts of the application, we are using RSpec which is a DSL testing tool for Ruby \citep{wiki:rspec}.
+\begin{listing}[H]
+\begin{minted}{ruby}
+context "when there is *" do
+  it "returns the query containing all columns in select" do
+    expect(subject.transform("SELECT * FROM table1"))
+      .to eq("SELECT `table1`.`id1`, `table1`.`id2` FROM `table1`")
+  end
+end
+\end{minted}
+\caption{Example of unit test for \mintinline{mysql}{*} transform}
+\label{fig:example_unit_test}
+\end{listing}
+
+Both the application and the library have unit tests covering 100\% of the code. This means that every unit of code is executed at least once during the test suite. It is worth mentioning that the utility of code coverage is highly debated. Work done by \cite{msft_testing} at Microsoft Research showed that more test coverage does not necessarily result in fewer bugs. This can be associated with many factors such as the increased difficult in testing complex code. More importantly the fact that code coverage is not correlated with how users are using the app: if users spent most time using features that represent 1\% of the code, testing that 1\% is more important that achieving a high code coverage in the rest of the application. \cite{msft_testing} suggests that is more important to have better test coverage in the more complex part of the application.
+
+To avoid the issues described by \cite{msft_testing}, both test suites try to include more tests for sensitive parts of the applications (such as canonicalization and grading process), with less tests covering non-core functionality. 
 
 \subsection{Integration testing}
+
+A more important type of testing is integration testing. Integration testing refers to the testing of the interaction between multiple units of the application. Integration testing makes sure that all units of an application work together according to the requirement. Integration tests are especially important in dynamic languages as classes interfaces are not checked. That means that a class will not know for sure that calling a method will succeed until run-time.
+
+\subsubsection{Integration testing in the web application}

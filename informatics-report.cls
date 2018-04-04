@@ -19,7 +19,10 @@
 \usepackage{enumitem}
 \usepackage{tikz}
 \usepackage{lmodern}
-\usetikzlibrary{shapes,arrows}
+\usepackage{tikz}
+\usetikzlibrary{calc,trees,positioning,arrows,chains,shapes.geometric,%
+    decorations.pathreplacing,decorations.pathmorphing,shapes,%
+    matrix,shapes.symbols}
 \usepackage{tabularx,ragged2e}
 \usepackage{amsmath}
 \usepackage{qtree}

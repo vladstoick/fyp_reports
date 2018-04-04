@@ -2,6 +2,22 @@
 
 \section{Comparing the final application with requirements}
 
+\section{Comparing the application with existing tools}
+
+When comparing the functionality of the application built, the most suitable comparison would be one with XData. While a comparison could also be done with commercial tools or tutor-style applications, the comparison with XData is more relevant as both XData and our tool provide a different, and arguably better, grading algorithm that these tools.
+
+The most important comparison with XData can be done on the basis of two criteria: the canonicalization process and the grading algorithm. One important aspect to keep in mind is that while XData also supports sub-queries to certain degree, our application does not have any form of support for sub-queries.
+
+The canonicalization process is very similar in both apps. The improvements done in our project are fairly limited with only two canonicalizations added. Even with these two added transformations, the reality is no liitations described in section \ref{ch:lit:sec:can:subsec:limit} are still present. In addition, these two transformations do not make any progress on solving the existing issues with the process described in section.
+
+On the other hand, the implement grading algorithm builds on top of the work done by XData. The newly implemented Boolean component comparison is a new addition that will ensure even more accurate grading. In addition, the algorithm is also able to partially grade two components that do not perfectly match. This will ensure that small mistakes such as using a \mintinline{mysql}{>} instead of \mintinline{mysql}{>=} do not get fully penalized.
+
+In addition to the grading algorithm, XData provides some important additional features:
+\begin{itemize}
+    \item Support for multiple RDBMS: XData has support for Oracle DB, Microsoft SQL, Postgres (it does not have support for MySQL which is used in our project). By allowing support for multiple RDBMS, XData has the potential of being deployed in more university courses.
+    \item XData implements a data generation algorithm that removes the need of seeding dummy data from the teacher. XData automatically creates a set of data built based on the teacher's correct query. This feature should prevent situations where two queries returns the same result even if they are different. According to \cite{lit:xdata_d}, this data generation has been shown to outperform fixed data-sets.
+\end{itemize}
+
 \section{Testing the application against exercies from existing sources}
 Although software testing is an important part of testing any application, a more important evaluation part is looking at how the application performs against real-life examples. For this, we have tested the application against different assignment from various sources. We looked at exercises from the following two sources.
 

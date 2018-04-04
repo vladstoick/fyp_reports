@@ -111,6 +111,114 @@ The assess method is fairly similar to the compile method. In fact, the steps 1-
 
 \end{tabularx}
 
+\subsection{Canonicalization} \label{ch:lit:sec:improved_canon}
+
+The library's canonicalization process will include all the transformations done by XData presented in section \ref{ch:lit:sec:canonicalization}. In addition to these, it also performs two more transformations:
+\begin{enumerate}
+    \item Transforming \mintinline{mysql}{*} in the full list of columns. This will ensure that the algorithm will not penalize students who type the full list of columns, instead of just using  \mintinline{mysql}{*}.
+    \item Making MySQL default attributes explicit. For instance, every MySQL \mintinline{mysql}{SELECT} query has a default uniqueness filter of \mintinline{mysql}{ALL}. That means that, while explicitly mentioning \mintinline{mysql}{ALL} will have no effect, it will not make the query wrong either.
+\end{enumerate}.
+
+The order in which transformations are performed is essential. For instance, the transformation of the BETWEEN predicate must happen before the transformation of \mintinline{mysql}{>=} to \mintinline{mysql}{<=}. That is because a \mintinline{mysql}{BETWEEN} clause will add a \mintinline{mysql}{>=}.
+
+Therefore the following order will be used:
+
+\begin{enumerate}
+    \item Transform \mintinline{mysql}{*} to all columns;
+    \item Transform ambiguous columns to qualified columns;
+    \item Transform equivalent columns;
+    \item Transform \mintinline{mysql}{NOT}
+    \item Transform \mintinline{mysql}{BETWEEN}
+    \item Transform \mintinline{mysql}{>} and \mintinline{mysql}{>=} to \mintinline{mysql}{<} and \mintinline{mysql}{<=};
+    \item Makes default explicit.
+\end{enumerate}
+
+\subsection{Grading algorithm}
+
+The project will provide a partial grading algorithm, using XData's approach. It will compare each element of the two queries (the student's and the instructor's) and assign a partial grade. However, the application will implement a different way for grading individual components. While XData only looks at perfect matches (same position, same structure), we will assign a partial grade even when two sub-parts of a query component are partially matching.
+
+The grade of a student's query will be based on the individual grade that comes from each component of the query. Each component of the query will have a certain weight in the final grade. As with XData, the weight can either be introduced manually or defaulted to $1 / total_{components}$.
+
+When looking at a query, we can determine the following types of components:
+
+\begin{itemize}
+    \item Simple components: that have predefined attributes. This is the case for:
+        \begin{itemize}
+            \item Uniqueness filter, which can only have one value (\mintinline{mysql}{DISTINCT}, \mintinline{mysql}{DISTINCTROW}, \mintinline{mysql}{ALL})
+            \item Limit and offset filter, which only has two attributes
+        \end{itemize}
+    \item Array components: that have a list of sub-components. This is the case for:
+        \begin{itemize}
+            \item Column list
+            \item Table list
+            \item Ordering list
+            \item Grouping list
+        \end{itemize}
+    \item Boolean components: that have a list of boolean conditions. This is the case for:
+        \begin{itemize}
+            \item Where filtering
+            \item Group filtering
+        \end{itemize}
+\end{itemize}
+
+\subsubsection{Partial grading of simple components}
+
+For simple components, we can look at the attributes of each component when assigning a partial grade.
+
+In the case of the uniqueness filter, we assign a 100\% grade if the two filters are unique. If the two filters are a pair of \mintinline{mysql}{DISTINCT} and \mintinline{mysql}{DISTINCTROW}, we assign a grade of 50\%. In all other cases, we assign a grade of 0\%.
+
+In the case of the limit and offset filter, both attributes have a weight of 50\% each. That means that if both attributes match, the grade assigned will be 100\%, if only one attribute matches, then a grade of 50\% will be assigned, otherwise a grade of 0\% will be given.
+
+\subsubsection{Partial grading of array components}
+
+Each array component can be compared with the components of the instructor's query, and assigned a match score (or percentage). For instance, a \mintinline{mysql}{ORDER BY c1 ASC} can be compared to \mintinline{mysql}{ORDER BY c1 DESC} and be assigned a match score. We apply the following matching rules:
+
+\begin{itemize}
+    \item Columns list: a 100\% match means that the two columns are identical. If the two columns are different, we then check the table - if the table is the same we then apply a levenshtein distance between the two column names to see how close they are.
+    \item Table list: a 100\% match means that the the components are identical. In the case of base tables (the first table in the table expression), this means that the table name is the same. For join expressions, this means that the table name, the join type and the join condition are identical. For join expressions we can also apply partial grading if the table joined is identical but either of the join type or join condition are different.
+    \item Ordering list: a 100\% match means that the two ordering conditions are identical and in the same position. For partial grading we will consider the position difference, or the ordering type (\mintinline{mysql}{ASC} or \mintinline{mysql}{DESC})
+    \item Grouping list: we apply the same rules as for the columns list.
+\end{itemize}
+
+
+When comparing two array components, we apply the following general algorithm (which can be identified as a greedy algorithm):
+\begin{enumerate}
+    \item We find the elements that match perfectly.
+    \item We build two lists containing the unmatched components from the instructor and the student.
+    \item We iterate through the list of unmatched student components and select the instructor's component with the closest match score (if one exists). If we find a match (i.e. the match score is greater than 0\%), we remove the selected instructor's component from the instructors' unmatched list). Otherwise, we continue iterating until we went over every unmatched student attribute.
+\end{enumerate}
+
+The final grade has the following formula:
+\begin{equation*}
+    Final\ grade = \frac{count_{perfectly\_matched\_components} * 2.0 + score_{matched\_components}}{count_{student\_attributes} + count_{instructor\_attribute}}
+\end{equation*}
+
+\subsubsection{Partial grading of Boolean components}
+
+As mentioned before, when comparing Boolean components, XData disregards the structure of the Boolean expression (the use of \mintinline{mysql}{AND} or \mintinline{mysql}{OR}) and only looks at the conditions by grading them as an array component. While this approach is acceptable to a certain degree, disregarding a part of a component will benefit those who make mistakes.
+
+Partially grading Boolean expressions is more complicated than simple arrays, and there can be many approaches to partially grading them. One approach, and the one this project uses, is to consider the Boolean expression tree. A binary expression tree is a specific type of binary tree used to represent expressions. For instance, the following Boolean expression: $a \land b \lor c$ can be expressed as the following tree:
+
+\Tree[
+    .$\lor$
+    [
+        .$\land$
+        [.$a$ ]
+        [.$b$ ]
+    ]
+    [
+        .$c$
+    ]
+]
+
+In a tree representation of a Boolean expression, the following are true:
+\begin{enumerate}
+    \item Internal nodes represent Boolean operators.
+    \item Leaves are represented by conditions.
+\end{enumerate}
+
+That means that a grade of such expression could be split in two separate parts, each with an equal weight. The first part would look at how many internal nodes of the tree match. For this part we can compare the two trees recursively, and see how many elements match. The second part would look at how many leaves (actual conditions) match. In order to grade this, the array approach can be used as the list of leaves is a simple array. As before, we can assign a partial match score for two conditions: for instance, if two queries compare the right elements, but use a $>$ instead of $<$.
+
 \section{Web application}
 
 

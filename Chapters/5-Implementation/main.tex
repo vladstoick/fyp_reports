@@ -1,6 +1,6 @@
 \chapter{Implementation and testing}
 
-\section{Library: Connecting to a MySQL server and executing queries} \label{ch:impllib:sec:connecting}
+\section{Library: connecting to a MySQL server and executing queries} \label{ch:impllib:sec:connecting}
 To connect to a MySQL server, the application uses the Ruby library mysql2. The library, or gem as it's called in Ruby, provides the implementation for connecting, querying and retrieving results from a MySQL server. mysql2 is a binding to MySQL's C library libmysql. mysql2 is the more modern and lean version of the mysql version. Compared to mysql gem, mysql2 gem can be 2 times faster and is built with Ruby in mind. Furthermore, mysql2 is also much more popular with over 42 million downloads on RubyGems, compared to mysql's 8 million downloads.
 
 To connect to a MySQL server, the library requires the address and port of the server, and an account and password. The account must be the root user or at least one that has the permission to create and drop databases, to create and drop users, and to grant permissions to an user.
@@ -58,7 +58,7 @@ All used queries are performed using this user, instead of using the root one. T
 
 The only way to get around the limitation of the restricted user would be to use a different user. Changing the user in MySQL is not possible through a MySQL command. The only possible way would be to use the \texttt{system} command which executes bash code in combination with the \texttt{mysql -uroot --password} bash command if they knew the root password, but not the url of the database. However, the \texttt{system} command is only available on connections opened with the \texttt{mysql} bash command, which is not the case for \texttt{mysql2} - so users can not exploit this method. Furthermore, the user has limited permissions so he can not run commands such as \mintinline{mysql}{SET PASSWORD} to change existing users.
 
-\section{Library: Parsing and transforming queries}
+\section{Library: parsing and transforming queries}
 
 Part of the canonicalization and grading process, SQL queries will go through multiple transformations after being parsed and separated in independent components. MySQL does not provide an official parser for any programming language, so the library had to use a 3rd party tool. The advantage of using an existing parser is that we can ignore the implementation details of parsing.
 
@@ -156,9 +156,25 @@ Unfortunately, compared to XData, the library can not handle submissions with XD
 
 If the library will encounter a sub-query, it will return an error explaining that such SQL queries are not currently supported.
 
-\section{Library: Canonicalizing queries}
+\section{Library: canonicalizing queries}
 
 As previously mentioned in section \ref{ch:lit:sec:improved_canon}, the library will implement a canonicalization step. The library implements all canonicalizations done by XData and described in section \ref{ch:lit:sec:canonicalization}, and the additional ones presented in section \ref{ch:lit:sec:improved_canon}. All transformations use sql-parser's transformations ability combined with the ability to make queries on the database.
+
+As mentioned in the design section \ref{ch:lit:sec:improved_canon}, the canonicalization process is done sequentially in a specific order that ensures that later canonicalizations do not make changes that make changes incompatible with previously executed transformations. 
+
+\begin{listing}
+\begin{minted}{ruby}
+def transform(query)
+  TRANSFORMERS.each do |transformer_class|
+    query = transformer_class.new(@connection).transform(query)
+  end
+
+  query
+end
+\end{minted}
+\caption{Sequential transformation of a query}
+\label{fig:sequential transformation of a query}
+\end{listing}
 
 \subsection{Transforming \mintinline{mysql}{*} to all columns}
 To transform \mintinline{mysql}{*} to MySQL, the library uses the fact that it doesn't need to support sub-queries. That means that it can simply look at what tables are selected and then perform \mintinline{mysql}{SHOW COLUMNS FROM table_name} on each table to get the full list of columns for each table. The library will then simply update the list of columns (initially represented by a \mintinline{mysql}{*}) to the new list of columns which contain the full list of \texttt{table\_name.column} for each selected table.
@@ -189,7 +205,7 @@ Transforming ambiguous columns to unambiguous columns is done in a similar way a
 
 Therefore to transform an ambiguous column we must go through the full list of columns of each table until we find a match. We then transform the ambiguous column to a qualified column. This process can be seen in listing \ref{fig:find_table}.
 
-An additional type of ambiguous column type is the position reference one which is found in the GROUP and ORDER clauses. In these two clauses, one can write \mintinline{mysql}{ORDER BY 2} where 2 references the second column from the select list. To find the qualified column that the position column references we need to look at the select list (after it was transformed to qualified columns) and select the right position: \mintinline{ruby}{@parsed_query.query_expression.list.columns[column.value - 1]} (position columns start at index 1, while arrays start at 0 in ruby)
+An additional type of ambiguous column type is the position reference one which is found in the GROUP and ORDER clauses. In these two clauses, one can write \mintinline{mysql}{ORDER BY 2} where 2 references the second column from the select list. To find the qualified column that the position column references we need to look at the select list (after it was transformed to qualified columns) and select the right position: \mintinline{ruby}{@parsed_query.query_expression.list.columns[column.value - 1]} (position columns start at index 1, while arrays start at 0 in ruby).
 
 Finally, the library also considers the aggregate column types which inside might contain a ambiguous column as well. Aggregate columns are of type \mintinline{ruby}{SQLParser::Statement::Aggregate} which has an attribute of type column. Therefore, we need to apply the same transformation to the inner column attribute.
 
@@ -242,7 +258,7 @@ LEFT JOIN table3 on table2.fid = table3.random_id
 
 To build the graph we use a Ruby library called RGL. RGL provides the implementation of various graph structures and graph algorithms (including the SCC algorithm).
 
-\begin{listing}
+\begin{listing}[H]
 \begin{minted}{ruby}
 equivalence = equivalences_list.detect do |equivalences|
   equivalences.include?(column.to_sql)
@@ -264,12 +280,6 @@ end
 \caption{Transforming equivalent columns}
 \end{listing}
 
-\subsection{Making defaults explicit}
-
-Every \texttt{MySQL} query has certain default attributes. For instance, every \texttt{MySQL SELECT} query has a default uniqueness filter of \mintinline{mysql}{ALL}. That means while explicitly mentioning \mintinline{mysql}{ALL} will have no effect, it does not mean that it is making the query wrong.
-
-In order to accurately compare two queries, we must make the defaults explicit in both queries.
-
 \subsection{Transforming conditions from WHERE, HAVING, and JOIN contiions}
 The WHERE and HAVING clauses and the JOIN conditions are represented by a Boolean expression tree. When transforming these clauses it is essential to ensure that the structure of the expression is not altered - that is the before and after expressions are equivalent. To do this, the algorithm traverses the tree recursively and only replaces leafs with either another leaf (in the case of transforming a condition to another) or to a inner node that has two leaves (in the case of transforming a condition to multiple another).
 
@@ -288,7 +298,7 @@ def transform_between_queries(statement)
   end
 end
 \end{minted}
-\caption{Example of traversing the tree}
+\caption{Example of traversing a Boolean expression tree}
 \end{listing}
 
 \subsubsection{Transforming \mintinline{mysql}{BETWEEN} predicate}
@@ -310,7 +320,7 @@ end
 
 \subsubsection{Transforming \mintinline{mysql}{NOT} comparison predicates}
 
-\begin{listing}[H]
+\begin{listing}[h]
 \begin{minted}{ruby}
 def transform_not(not_statement)
   # Greater
@@ -332,11 +342,115 @@ end
 \label{fig:transforming_not}
 \end{listing}
 
+
+In the case of \mintinline{mysql}{NOT} predicates, the transformation process simply transforms the predicate to its opposite:
+\begin{enumerate}
+    \item \mintinline{mysql}{>} becomes \mintinline{mysql}{<=}
+    \item \mintinline{mysql}{>=} becomes \mintinline{mysql}{<}
+    \item \mintinline{mysql}{<} becomes \mintinline{mysql}{>=}
+    \item \mintinline{mysql}{>=} becomes \mintinline{mysql}{>}
+\end{enumerate}
+
+In addition to these 4 predicate types, NOT can also be used with other types of predicates which the library will not transform (e.g. \mintinline{mysql}{NOT LIKE} which cannot be easily transformed to remove the use of \mintinline{mysql}{NOT}).
+
 \subsubsection{Transform \mintinline{mysql}{>} and \mintinline{mysql}{>=} to \mintinline{mysql}{<} and \mintinline{mysql}{<=}}
 
-\section{Library: Extracting attributes from a canonicalized query}
+Transforming \mintinline{mysql}{>} and \mintinline{mysql}{>=} to \mintinline{mysql}{<} and \mintinline{mysql}{<=} is done by simply reverting the predicate and the switching the left element of the comparison predicate with the right element of the predicate.
 
-\section{Library: Partial grading}
+\begin{listing}
+\begin{minted}{ruby}
+def transform_comparison_predicate(predicate)
+  if predicate.is_a?(SQLParser::Statement::Greater)
+    SQLParser::Statement::Less.new(
+      predicate.right,
+      predicate.left
+    )
+  elsif predicate.is_a?(SQLParser::Statement::GreaterOrEquals)
+    SQLParser::Statement::LessOrEquals.new(
+      predicate.right,
+      predicate.left
+    )
+  else
+    predicate
+  end
+end
+\end{minted}
+\caption{Transforming \mintinline{mysql}{>} and \mintinline{mysql}{>=} to \mintinline{mysql}{<} and \mintinline{mysql}{<=}}
+\label{fig:transforming_great}
+\end{listing}
+
+\section{Library: extracting attributes from a canonicalized query}
+
+While sql-parser provides the AST tree for the parsed query, it does not explicitly provide the components of a query. To extract them, the library makes use of the AST and makes various transformations in order to extract the components to a desired data structure. The resulting data structure might be similar to the AST (which is true for most components), but it might also be different (for instance the FROM expression is represented as a tree in the AST, but we can more clearly represent it as an array).
+
+These extraction and transformation process help in two important ways. First of all, it extracts the data in a format that can be easily compared and identical across similar types of expressions (for instance the structure of the WHERE component is identical to the structure of the HAVING component). In addition, the format can be defined in a way that is also easy to display on the front-end.
+
+\subsection{Making defaults explicit}
+
+Every \texttt{MySQL} query has certain default attributes. For instance, every \texttt{MySQL SELECT} query has a default uniqueness filter of \mintinline{mysql}{ALL}. That means while explicitly mentioning \mintinline{mysql}{ALL} will have no effect, it does not mean that it is making the query wrong. In order to accurately compare two queries, we must make the defaults explicit in both queries. The defaults will be made explicit during this extraction process.
+
+\subsection{Format of components}
+
+\begin{itemize}
+    \item \textbf{Selected columns} are simply represented as an array of strings, where every string represents a selected column.
+    \item \textbf{Order by} clause is represented represented as an array of strings, where every string represents a column.
+    \item \textbf{Group} clause is represented represented as an array of strings, where every string represents a column.
+    \item \textbf{Tables} clause is represented represented as an array of hashes. There are two types of hashes that can be included:
+    \begin{enumerate}
+        \item The first element of the array is the base table (or sub-query) of the \mintinline{mysql}{FROM} clause. The item is represented as a hash containing the following keys:
+        \begin{enumerate}
+            \item \mintinline{ruby}{type}: either \mintinline{ruby}{"table"} or \mintinline{ruby}{"Subquery"}
+            \item \mintinline{ruby}{table}: the table name or \mintinline{ruby}{attributes} in the case of sub-queries
+            \item \mintinline{ruby}{sql}: the element represented a SQL expression
+        \end{enumerate}
+        \item The other elements (the joined tables or joined sub-queries) of the array are represented as a hash containing the following keys:
+        \begin{enumerate}
+            \item \mintinline{ruby}{join_type}: the type of the join
+            \item \mintinline{ruby}{table}: a hash that represents a table or sub-query. The format of the hash is the same one as the first element of the array.
+            \item \mintinline{ruby}{searchcondition}: represents the join condition. Even if the search condition is similar to a Boolean component, at the moment, the join condition is represented simply as a string. The implication of this representation is that no partial grading is possible on the search condition.
+            \item \mintinline{ruby}{sql}: the full SQL expression for the join (e.g. \mintinline{mysql}{LEFT JOIN table_name ON condition1 AND CONDITION 2})
+        \end{enumerate}
+    \end{enumerate}
+    \item \textbf{Distinct filter} is represented a simple string.
+    \item \textbf{Limit} clause is represented as a hash with two keys: limit and offset. If the limit is not defined then the value \texttt{inf} will be associated with it.
+    \item \textbf{Where and Having} clauses are represented identically. There are two formats in which the library represents them as each format is used for a different purpose:
+    \begin{enumerate}
+        \item For the grading algorithm, these clauses are represented as binary trees.
+        \item For the web application, these clauses are represented as trees (but not binary trees), where search conditions (e.g. \mintinline{mysql}{AND}) can have more than two children. For instance, the binary tree for expression ($ a \land b \land c$) has the following structure: 
+        
+\Tree[
+    .$\land$
+    [
+        .$\land$
+        [.$a$ ]
+        [.$b$ ]
+    ]
+    [
+        .$c$
+    ]
+]
+
+while the tree format for the web application has the following structure
+
+\Tree[
+    .$\land$
+    [
+        .$a$
+    ]
+    [
+        .$b$
+    ]
+    [
+        .$c$
+    ]
+]
+
+This format allows easier display on the front-end of the conditions.
+    \end{enumerate}
+\end{itemize}
+
+
+\section{Library: partial grading}
 
 \section{Web application: user management}
 \subsection{Authentication}
@@ -378,13 +492,43 @@ end
 \end{listing}
 \end{itemize}
 
+\section{Web application: front-end implementation}
+Although not too much time has been spent on the web application front-end, the development of it tried to take in consideration future work that might occur on it. 
+
+Therefore, the web application front-end is built using a modern architecture. While pages used to be powered in general mostly be HTML and CSS only, nowadays JavaScript (JS) is almost always used in all applications. However, JS in large applications is no longger used just by including a file in HTML's \mintinline{html}{<head>}. The increased popularity of JS frameworks (React, Angular, Vue, etc.) meant that most JS apps now use a build system. To prepare for this, the web application uses Webpack.  Webpack is the  module bundler endorsed by both React and Vue.
+
+In addition to just bundling JS, Webpack also bundles other types of files. One important type of file bundled, is represented by SCSS files which are used in the web application. SCSS is, according to their creators, ''CSS with superpowers''. SCSS provides many additional features such as functions that allows us to create styles faster. For instance, the CSS styles for display the where clause as a tree with 10 levels, can be easily defined in just a few lines of code presented in listing \ref{fig:scss}, instead of defining a style for each level.
+
+The front-end design is currently built using three tools:
+\begin{enumerate}
+    \item Bootstrap: an open-source frontend framework that provides CSS and JS for most common web page components.
+    \item codemirror: a basic code editor that can be included in HTML page
+    \item  highlight.js: a basic code highlighter (for static fields) that can be included in a HTML page.
+\end{enumerate}
+
+%TC:ignore
+\begin{listing}
+\begin{minted}{scss}
+@for $i from 0 through 10 {
+  .where-clause-depth-#{$i}::before {
+    content: repeat('··', $i + 1);
+    margin-right: 4px;
+    color: grey;
+  }
+}
+\end{minted}
+\caption{Defining tree representation of WHERE}
+\label{fig:scss}
+\end{listing}
+%TC:endignore
+
 \section{Testing}
 
 Testing any software is an essential step in the development process. The purpose of software testing is to validate that the software is behaving as intended \citep{lit:software_testing}. Testing can also be used to check if the requirements have been correctly implemented. As previously mentioned in the development process section (\ref{ch:reqandspec:sec:spec:subsec:dev_process}), testing has been an integral part of the project, with new tests written for all new features added.
 
-Testing is especially important in dynamic languages like Ruby where due to the lack of types and a compile step. Ruby uses what is sometimes called \textit{duck typing} which is enforced using the duck test: ''If it walks like a duck and it quacks like a duck, then it must be a duck.'' \citep{wiki:duck_typing}. That means that Ruby only cares if an object implements a method, it does not care about the type of the object on which the method is called. While this might help developers move faster, duck typing can lead to an increased amount of errors as no type checking is done until runtime. In addition, without a proper test suite, refactoring can become a nightmare for someone working in a dynamic programming language as he has no confidence that the changes he is making will not affect the application.
+Testing is especially important in dynamic languages like Ruby where due to the lack of types and a compile step. Ruby uses what is sometimes called \textit{duck typing} which is enforced using the duck test: ''If it walks like a duck and it quacks like a duck, then it must be a duck.'' \citep{wiki:duck_typing}. That means that Ruby only cares if an object implements a method, it does not care about the type of the object on which the method is called. While this might help developers move faster, duck typing can lead to an increased amount of errors as no type checking is done until run-time. In addition, without a proper test suite, re-factoring can become a nightmare for someone working in a dynamic programming language as he has no confidence that the changes he is making will not affect the application.
 
-To ensure that the software is working according to the requirements and that future refactors will be made easily, the project uses two types of testing: unit testing and integration testing.
+To ensure that the software is working according to the requirements and that future re-factors will be made easily, the project uses two types of testing: unit testing and integration testing.
 
 
 \subsection{Unit testing}
@@ -415,3 +559,57 @@ To avoid the issues described by \cite{msft_testing}, both test suites try to in
 A more important type of testing is integration testing. Integration testing refers to the testing of the interaction between multiple units of the application. Integration testing makes sure that all units of an application work together according to the requirement. Integration tests are especially important in dynamic languages as classes interfaces are not checked. That means that a class will not know for sure that calling a method will succeed until run-time.
 
 \subsubsection{Integration testing in the web application}
+
+Integration testing in a web application has the role of checking if all MVC components. Integration testing was done using RSpec and Capybara. Capybara is a tool that simulates scenarios by directly controlling a web browser driver. That means that Capybara takes a set of instructions (such as click this button, type in this field, etc.) and executes them on actual browser. Integration testing with Capybara follows a very similar pattern to user stories. In fact, all user stories for a web application can be implemented as Capybara tests.
+\begin{listing}[H]
+\begin{minted}{ruby}
+context "logged in as an admin" do
+  context "with correct queries" do
+    it "creates the challenge and displays the query" do
+      visit "/challenges/new"
+
+      fill_in "Title", with: "Challenge 1"
+      fill_in "Content", with: "Challenge 1 content"
+      fill_in "Sql schema", with: "CREATE TABLE t1(id integer);"
+      fill_in "Sql seed", with: "INSERT INTO t1(id) VALUES (1), (2);"
+      fill_in "Sql correct query", with: "SELECT * FROM t1"
+
+      click_button "Create"
+
+      expect(page).to have_text("Successfully created")
+
+      expect(page).to have_text("CREATE TABLE t1(id integer);")
+      expect(page).to have_text("INSERT INTO t1(id) VALUES (1), (2);")
+      expect(page).to have_text("SELECT * FROM t1")
+    end
+  end
+end
+\end{minted}
+\caption{Example of integration test using Capybara.}
+\end{listing}
+
+\subsection{Integration testing in the library}
+
+Integration testing in the library is basically testing of the \mintinline{ruby}{Assesor} class which internally uses all other classes. Testing the assessor is equivalent with testing the integration between the database connection and secure querying, the canonicalization process, the extraction of components, and finally the grading process. In addition to the integration tests for the assessor, other integration tests are represented by the tests for \mintinline{ruby}{QueryTransformer} which uses all transformations to transform a query, and the \mintinline{ruby}{QueryAttributeExtractor} which extract all attributes from a query.
+
+Integration tests are defined in a \texttt{.yml} file that is then loaded and then tests are created based on that file. Listing \ref{fig:dynamically_testing} shows how integration tests for the transformer are automatically defined from a file.
+
+\begin{listing}
+\begin{minted}{ruby}
+yaml = YAML.load_file("spec/fixtures/transformer_integration_tests.yml")
+
+yaml.each do |test|
+  it "transform #{test['query']} to #{test['expected_result']}" do
+    # Seed date
+    connection.multiple_query(test["schema"])
+    # Check if queries from file are correct
+    connection.query(test["query"])
+    connection.query(test["expected_result"])
+    # Check transformation
+    expect(subject.transform(test["query"])).to eq(test["expected_result"])
+  end
+end
+\end{minted}
+\caption{Dynamically defining tests based on a file}
+\label{fig:dynamically_testing}
+\end{listing}

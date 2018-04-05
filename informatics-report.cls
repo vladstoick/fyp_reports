@@ -6,6 +6,7 @@
 \ProvidesClass{informatics-report}[2012/10/07 Informatics Final Year Project Report Class]
 
 \usepackage{graphicx}
+\usepackage[utf8]{inputenc}
 \usepackage[left=1.4in, right=1.4in, top=0.8in, bottom=1.0in]{geometry}
 \usepackage{layout}
 \usepackage{url}

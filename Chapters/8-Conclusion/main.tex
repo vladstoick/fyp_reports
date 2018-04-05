@@ -16,11 +16,15 @@ The tool built by the project adheres to the default standards used by \textit{R
 \section{Limitations}
 \begin{itemize}
     \item No support for sub-queries: the application can not handle sub-queries in its current version. Some initial work to implement this feature has been done, but it is yet to be finished;
-    \item Limitations associated with sql-parser:
+    \item sql-parser brings multiple limitations with its usage. In our limited time we found and fixed some issues, but other remain:
     \begin{itemize}
-        \item No support for aliases: there is no support for aliasing columns or tables
+        \item Poor and untested support for sub-queries;
+        \item No support for aliases: there is no support for aliasing columns or tables;
         \item No support for other types of queries such as DELETE etc.
+        \item It is very likely that a more thorough testing will reveal even more limitations associated with the usage of sql-parser.
     \end{itemize}
+    \item Hints are not very specific: they just point out what component is wrong, but not what is wrong with it.
+    \item Web application's design and user experience is fairly basic. Due to the higher importance of the grading algorithm, less time has been spent on the web application. Currently, the web application is simply a MVP (minimum viable product) that serves as a user-accessible web interface for using the library.
 \end{itemize}
 
 
@@ -30,4 +34,6 @@ The tool built by the project adheres to the default standards used by \textit{R
     \item \textbf{Adding support for new RDBMS}: while focusing on MySQL allowed the project to focus on its core value (the grading algorithm), it also meant that no attention has been given to other database systems. In addition, the parser used sql-parser is built to support only MySQL syntax.
     \item \textbf{Implement a data generation system}: the work done by \citet{lit:xdata_d} in implementing a data generation for XData showed that such an algorithm will performed better than fixed data sets. This will ensure that false positives (when the query is wrong but is marked as correct due to the results matching) will be (almost) removed.
     \item \textbf{Moving away from sql-parser}: the use of sql-parser is one of the biggest blockers in implementing support for new RDBMS. One problem with moving away from sql-parser is that Ruby does not provide any alternative SQL parsers other than pg\_query which is also limited to a single RDBMS.
+    \item \textbf{Make the web application more user-friendly}: many areas of the web application can be improved: user management, overall design, error display. The front-end has a very modern architecture that uses SASS, webpack, and Bootstrap, which means that improving it should be simply a matter of spending time on it.
+    \item \textbf{Make the hints more relevant}: currently the hints can only look at what SQL component is wrong, but it cannot pinpoint exactly what is wrong within that component. The library could be improved so it takes relevant hints during the grading comparison.
 \end{itemize}

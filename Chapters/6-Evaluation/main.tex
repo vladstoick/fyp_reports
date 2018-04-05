@@ -1,10 +1,40 @@
 \chapter{Evaluation}
 
-\section{Comparing the final application with requirements}
+Evaluating whether a project is successful or not an easy task \citep{lit:definining_success}. \cite{lit:definining_success} found that the definition of success can vary from a type of stakeholder to another. The definition of success is based on three important indicators: cost, time, and scope (which includes functionality and software quality) \citep{lit:definining_success}.
+
+Some stakeholders value the attainment of scope in the desired time, while others consider delivering on time the most important. Overall, \cite{lit:definining_success} found in their survey that all stakeholders value scope the most.
+
+This chapter will present a critical evaluation of the project. First of all, we will try to check how well was the defined \textit{scope} met. After that, we will compare the project with existing tools, and finally we will do a practical evaluation of the library by using exercises from existing sources.
+
+\section{Attainment of \textit{scope}}
+According to \cite{lit:definining_success}, scope is generally understood as both functionality and software quality.
+
+\subsection{Functionality}
+
+The required functionality of the application was previously defined in the requirements chapter. The functionality was split in two parts: the web application and the library.
+
+When looking at the functionality required for the web application, we believe that all of the presented requirements have been fully met. Most of these requirements can be manually checked. In fact, all these requirements are fully tested in the integration test suite.
+
+However, when looking at the requirements for the library, it is much harder to assess the degree to which these requirements were met. Most of the requirements are impossible to measure, especially considering that some of them included a research phase. For instance, evaluating requirements such as ''The library should implement a grading algorithm for assessing SQL assignments'' is realistically impossible. While the library implements such an algorithm, it is very to assess its implementation. Evaluating the library by comparing to the functionality implemented is not highly relevant. A more relevant evaluation process of the library is an empirical one, which will be presented in the next two sections.
+
+\subsection{Software quality}
+
+Evaluating software quality is not an easy task as there is no single universally accepted way of measuring software quality. Different persons define software quality differently: some argue that code coverage is an indication of the quality, while others believe that other metrics are more relevant (performing efficiently, how easy can one modify the code, intelligibility of code, etc.) \citep{msft_testing, Boehm:1976:QES:800253.807736}.
+
+It is our (highly subjective) belief that overall the resulting software is of good quality. However, performing a non-empirical evaluation of software quality is not possible. To ensure software quality, we can list some of the considerations project took:
+\begin{itemize}
+    \item Ensure that all code is fully tested and that code coverage is 100\%
+    \item Ensure that all code adheres to the standards provided by Rubocop to ensure a legible and easy to understand code. One aspect that could be further improved is that there are options to reduce the code duplication across files.
+    \item Ensure that security is implemented correctly either by strong encryption or by secure execution of user input.
+\end{itemize}
+
+One area where the software quality is not as good as possible is performance in the grading algorithm, and more specifically the canonicalization process. The canonicaliation can execute the same query multiple times during the canonicalization of a query (e.g. getting the columns for a table is used by multiple canonicalizations steps). While the grading is still very fast, these processes could be further improved to avoid unneeded database queries.
 
 \section{Comparing the application with existing tools}
 
-When comparing the functionality of the application built, the most suitable comparison would be one with XData. While a comparison could also be done with commercial tools or tutor-style applications, the comparison with XData is more relevant as both XData and our tool provide a different, and arguably better, grading algorithm that these tools.
+When comparing the functionality of the application built with existing tools for automating assesment of SQL, the most suitable comparison would be one with XData. While a comparison could also be done with commercial tools or tutor-style applications, the comparison with XData is more relevant as both XData and our tool provide a different, and arguably better, grading algorithm that these tools.
+
+\subsection{Comparison with XData}
 
 The most important comparison with XData can be done on the basis of two criteria: the canonicalization process and the grading algorithm. One important aspect to keep in mind is that while XData also supports sub-queries to certain degree, our application does not have any form of support for sub-queries.
 
@@ -18,23 +48,32 @@ In addition to the grading algorithm, XData provides some important additional f
     \item XData implements a data generation algorithm that removes the need of seeding dummy data from the teacher. XData automatically creates a set of data built based on the teacher's correct query. This feature should prevent situations where two queries returns the same result even if they are different. According to \cite{lit:xdata_d}, this data generation has been shown to outperform fixed data-sets.
 \end{itemize}
 
-\section{Testing the application against exercies from existing sources}
-Although software testing is an important part of testing any application, a more important evaluation part is looking at how the application performs against real-life examples. For this, we have tested the application against different assignment from various sources. We looked at exercises from the following two sources.
+\subsection{Comparison with the tools}
+
+The most important comparison with other tools can be made based on the user expeirence. While their grading algorithm might be inferior, the commercial tools provide a much better user experience with a much better design. The UX and UI area of the project that did not receive too much attention during the project due to time constraints and reduced importance for the overall project.
+
+For instance, HackerRank provides a much easier web interface to use: challenges are made up of multiple categories, each challenge has a discussion forum, one can easily see its past submissions, etc.
+
+
+\section{Testing the application against exercises from existing sources}
+
+The most important type of evaluation, in our opinion, is represented by a type of evaluation that actually tries to understand how practical the application would be in reality. Other tools developed for academia have been tested in actual courses. However, for our smaller project, we have not been able to do that. Instead, we have tested the application against different assignment from various sources. We looked at exercises from the following two sources.
 
 \begin{itemize}
     \item Exercises from \textit{Database System Concepts, 5th edition} written by Abraham Silberschatz, Henry F. Korth, S. Sudarshan.
     \item Exercises from Hackerrank \texttt{SQL} course.
 \end{itemize}
 
-We tried to understand how will our application be able to handle actual usage if it were to be deployed in production. We compared the ability of the app to handle the solution queries for each
+The goal of this evaluation is to understand if our application will be able to handle actual usage if it were to be deployed in production. The evaluation will focus exclusively on the accuracy of the grading algorithm.
 
-\subsection{Comparing the project to a commercial tool for teaching SQL}
-
-As mentioned in \ref{ch:lit:sec:tutor:comercial}, HackerRank provides multiple \texttt{SQL} exercises that can help a student practice his SQL abilities.
-
-As previously described, HackerRank only provides a Boolean true/false assessment result for any submission. The functionality can be fully replicated in the application built. However, a more interesting evaluation is related to how well the computer can provide a grade and what's the quality of the components.
 
 To assess the accuracy of the algorithm built, an evaluation of its ability to extract comparable components has been performed. We can define  a comparable component as one that was either canonicalized or cannot be rewritten in any other way. This aspect is the the most important one of the application, as it influences both the grade, as well as the hints received.
+
+\subsection{Evaluating the project with exercises from HackerRank}
+
+As mentioned in \ref{ch:lit:sec:tutor:comercial}, HackerRank provides multiple \texttt{SQL} exercises that can help a student practice his SELECT SQL abilities.
+
+
 
 HackerRank separates their SQL course in 4 parts as following:
 \begin{enumerate}
@@ -45,11 +84,7 @@ HackerRank separates their SQL course in 4 parts as following:
 
 For the evaluation process we have used solutions provided by GitHub user \textit{Larkin22} made available at \url{https://github.com/Larkin22/HackerRank---SQL-Solutions}.
 
-\subsubsection{Basic Select Queries}
-
-The algorithm built was able to fully canonicalize the queries and extract the components
-
-\subsection{Overview}
+\subsubsection{Overview}
 
 Overall, the algorithm performed very well in the basic queries, but had issues in the more advanced. The most prevalent issues were encountered in the following two areas:
 \begin{itemize}
@@ -58,3 +93,5 @@ Overall, the algorithm performed very well in the basic queries, but had issues 
 \end{itemize}
 
 It is clear that as queries go more complex, the likelihood of using sub-queries also increases which makes the algorithm unusable in these cases. However,
+
+\subsection{}

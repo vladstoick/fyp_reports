@@ -12,8 +12,7 @@ As the library will be used in a web application, concurrency is inevitable. Use
 To allow concurrency, each submission or compilation is performed using different connections to different databases (a MySQL server can have multiple databases).  Every compilation or submission begins by creating a new and unique database based on the current time. The database name will follow the format \texttt{HOURMINUTESECOND}. While this should cover most cases, due to the concurrent nature of the application, it might be the case that two connections try to create a database with the same name. However, MySQL statements are atomic. That means that two statements can not both change the schema of the MySQL server. Therefore, it is guaranteed that at least one create will fail. In this case, we repeat all failed creations (by using the new time) until they succeed. On second and further attempts, we also add a \mintinline{ruby}{_attempt} at the end of the database name to reduce the chance of another conflict. At the end of the compilation, the newly created database will be dropped and all data associated discarded.
 
 %TC:ignore
-\begin{listing}
-    \centering
+\begin{code}
     \begin{minted}{ruby}
 success = false
 attempt = 0
@@ -38,21 +37,22 @@ end
 \end{minted}
     \caption{Creating a new database for each run}
     \label{fig:creating_new_database}
-\end{listing}
+\end{code}
 %TC:endignore
 
 \subsection{Preventing malicious actions from input SQL queries}
 
 Considering the fact that the library executes arbitrary queries, the risks associated with malicious SQL are significant. The application never returns back the query results which means that the potential for data leaking through this does not exist. However, an arbitrary query can destroy or modify other databases on the MySQL server. Therefore, the library must take extra precautions as it deals with unchecked user code. To prevent malicious actions, we create a new MySQL user that only has permission for the newly created database.
+
 %TC:ignore
-\begin{listing}
+\begin{code}
 \begin{minted}{ruby}
 @client.query("CREATE USER IF NOT EXISTS `#{@database}`;")
 @client.query("GRANT ALL PRIVILEGES ON `#{@database}`.* TO `#{@database}` WITH GRANT OPTION;")
 \end{minted}
 \caption{Creating a new user with permissions for the new database}
 \label{fig:creating_new_user}
-\end{listing}
+\end{code}
 %TC:endignore
 All used queries are performed using this user, instead of using the root one. The temporary user is also deleted at the end of the compile/ assessment execution. This way, the user input can only damage the created database for his assessment. However, this is not an issue considering these are short-lived databases which are destroyed at the end of the assessment.
 
@@ -80,7 +80,7 @@ In the end, due to the issues described previously, a decision was made to conti
 The process of adding a new feature was formed of multiple parts:
 \begin{enumerate}
     \item Create a \mintinline{ruby}{Node} class representing the new clause, if a new clause was implemented. A \mintinline{ruby}{Node} represents an element of a query: a clause, a number, a word, a condition, etc. For instance, the newly created \texttt{LIMIT} node has the following structure:
-    \begin{listing}[H]\centering
+    \begin{code}\centering
 \begin{minted}{ruby}
 class LimitClause < Node
     def initialize(limit, offset)
@@ -93,10 +93,10 @@ end
 \end{minted}
 \caption{Limit clause \mintinline{ruby}{Node}}
 \label{fig:limit_clause}
-\end{listing}
+\end{code}
     \item Update existing \mintinline{ruby}{Node} to link to the newly created node. For instance, the \mintinline{ruby}{LimitClause} node had to be linked to the \mintinline{ruby}{TableExpression} node.
     \item Add the new parsing rules to Racc grammar file. For instance, when adding the LIMIT clause there are three options: there is only a limit number, there are two numbers for limit and offset separated by the word \texttt{OFFSET}, or the two numbers are separated by a comma:
-\begin{listing}[H]
+\begin{code}
     \centering
     \begin{minted}{ruby}
   limit_clause
@@ -107,7 +107,7 @@ end
     \end{minted}
     \caption{Limit clause \texttt{Racc}}
     \label{fig:limit_clause_racc}
-\end{listing}
+\end{code}
 \end{enumerate}
 
 \subsection{Using sql-parser to parse SQL queries}
@@ -138,7 +138,7 @@ All the leaves presented in figure \ref{fig:select_ast} also have their nodes. F
 \subsection{Using sql-parser to change queries}
 sql-parser also provides a way to change a parsed query (which is now a combination of multiple Nodes) back to a SQL query. Unfortunately, the process of internally modifying the structure of a query is not well-defined and there is no public interface exposed. Each node has one or more private instance variable that represent the values of the Node. For instance, the limit node shown in listing \ref{fig:limit_clause}, has two such variables: limit and offset. sql-parser does not provide a way to change these properties as all Nodes just expose a reader method (set using \mintinline{ruby}{attr_reader}). Fortunately, ruby provides a \mintinline{ruby}{instance_variable_set} method while allows anyone with a reference to an object to change that object's internal variables even if they are private and no setter is exposed. It is worth mentioning that while this approach might work, the use of this method \mintinline{ruby}{instance_variable_set} goes against the principle of encapsulation, and might mean that a future update to the library can lead to errors, if the internal structure of Nodes is modified.
 
-\begin{listing}
+\begin{code}
 \begin{minted}{ruby}
 @parsed_query.query_expression.list.instance_variable_set(
   "@columns",
@@ -146,7 +146,7 @@ sql-parser also provides a way to change a parsed query (which is now a combinat
 )
 \end{minted}
 \caption{Example of updating the column list for a parsed query}
-\end{listing}
+\end{code}
 
 After a query is modified, sql-parser exposes a \mintinline{ruby}{.to_sql} method on each Node that can be used to transform a Node to a SQL statement.
 
@@ -162,7 +162,7 @@ As previously mentioned in section \ref{ch:lit:sec:improved_canon}, the library 
 
 As mentioned in the design section \ref{ch:lit:sec:improved_canon}, the canonicalization process is done sequentially in a specific order that ensures that later canonicalizations do not make changes that make changes incompatible with previously executed transformations. 
 
-\begin{listing}
+\begin{code}
 \begin{minted}{ruby}
 def transform(query)
   TRANSFORMERS.each do |transformer_class|
@@ -174,12 +174,12 @@ end
 \end{minted}
 \caption{Sequential transformation of a query}
 \label{fig:sequential transformation of a query}
-\end{listing}
+\end{code}
 
 \subsection{Transforming \mintinline{mysql}{*} to all columns}
 To transform \mintinline{mysql}{*} to MySQL, the library uses the fact that it doesn't need to support sub-queries. That means that it can simply look at what tables are selected and then perform \mintinline{mysql}{SHOW COLUMNS FROM table_name} on each table to get the full list of columns for each table. The library will then simply update the list of columns (initially represented by a \mintinline{mysql}{*}) to the new list of columns which contain the full list of \texttt{table\_name.column} for each selected table.
 
-\begin{listing}
+\begin{code}
 \begin{minted}{ruby}
 new_columns = table_list.map do |table|
   columns_query = "SHOW COLUMNS from #{table}"
@@ -194,7 +194,7 @@ new_columns = table_list.map do |table|
 end.flatten
 \end{minted}
 \caption{Getting the full list of columns for a query}
-\end{listing}
+\end{code}
 
 \subsection{Transforming ambigous columns to unambigous columns}
 Transforming ambiguous columns to unambiguous columns is done in a similar way as the previous transformations. The transformation makes use of two important aspects:
@@ -212,7 +212,7 @@ Finally, the library also considers the aggregate column types which inside migh
 In sql-parser, unqualified columns have the parsed node type \mintinline{ruby}{SQLParser::Statement::Column}, while qualified columns have the parsed node type \mintinline{ruby}{SQLParser::Statement::QualifiedColumn}.
 
 %TC:ignore
-\begin{listing}
+\begin{code}
 \begin{minted}{ruby}
 def find_table_for(column_name)
   table_list.detect do |table|
@@ -224,7 +224,7 @@ end
 \end{minted}
 \caption{Determining the table for an ambigous column with name}
 \label{fig:find_table}
-\end{listing}
+\end{code}
 %TC:endignore
 
 
@@ -258,7 +258,7 @@ LEFT JOIN table3 on table2.fid = table3.random_id
 
 To build the graph we use a Ruby library called RGL. RGL provides the implementation of various graph structures and graph algorithms (including the SCC algorithm).
 
-\begin{listing}[H]
+\begin{code}
 \begin{minted}{ruby}
 equivalence = equivalences_list.detect do |equivalences|
   equivalences.include?(column.to_sql)
@@ -278,12 +278,12 @@ else
 end
 \end{minted}
 \caption{Transforming equivalent columns}
-\end{listing}
+\end{code}
 
 \subsection{Transforming conditions from WHERE, HAVING, and JOIN contiions}
 The WHERE and HAVING clauses and the JOIN conditions are represented by a Boolean expression tree. When transforming these clauses it is essential to ensure that the structure of the expression is not altered - that is the before and after expressions are equivalent. To do this, the algorithm traverses the tree recursively and only replaces leafs with either another leaf (in the case of transforming a condition to another) or to a inner node that has two leaves (in the case of transforming a condition to multiple another).
 
-\begin{listing}[H]
+\begin{code}
 \begin{minted}{ruby}
 def transform_between_queries(statement)
   if statement.is_a?(SQLParser::Statement::SearchCondition)
@@ -299,13 +299,13 @@ def transform_between_queries(statement)
 end
 \end{minted}
 \caption{Example of traversing a Boolean expression tree}
-\end{listing}
+\end{code}
 
 \subsubsection{Transforming \mintinline{mysql}{BETWEEN} predicate}
 
 A \mintinline{mysql}{column BETWEEN a AND B} predicate will be transformed to two separate predicates: \mintinline{mysql}{column >= a} and \mintinline{mysql}{column <= b}. 
 
-\begin{listing}[ht]
+\begin{code}
 \begin{minted}{ruby}
 def transform_between_query(predicate)
   SQLParser::Statement::And.new(
@@ -316,11 +316,21 @@ end
 \end{minted}
 \caption{Transforming a BETWEEN predicate}
 \label{fig:transforming_a_betweeb}
-\end{listing}
+\end{code}
 
 \subsubsection{Transforming \mintinline{mysql}{NOT} comparison predicates}
 
-\begin{listing}[h]
+In the case of \mintinline{mysql}{NOT} predicates, the transformation process simply transforms the predicate to its opposite:
+\begin{enumerate}
+    \item \mintinline{mysql}{>} becomes \mintinline{mysql}{<=}
+    \item \mintinline{mysql}{>=} becomes \mintinline{mysql}{<}
+    \item \mintinline{mysql}{<} becomes \mintinline{mysql}{>=}
+    \item \mintinline{mysql}{>=} becomes \mintinline{mysql}{>}
+\end{enumerate}
+
+In addition to these 4 predicate types, NOT can also be used with other types of predicates which the library will not transform (e.g. \mintinline{mysql}{NOT LIKE} which cannot be easily transformed to remove the use of \mintinline{mysql}{NOT}).
+
+\begin{code}
 \begin{minted}{ruby}
 def transform_not(not_statement)
   # Greater
@@ -340,24 +350,13 @@ end
 \end{minted}
 \caption{Transforming NOT}
 \label{fig:transforming_not}
-\end{listing}
-
-
-In the case of \mintinline{mysql}{NOT} predicates, the transformation process simply transforms the predicate to its opposite:
-\begin{enumerate}
-    \item \mintinline{mysql}{>} becomes \mintinline{mysql}{<=}
-    \item \mintinline{mysql}{>=} becomes \mintinline{mysql}{<}
-    \item \mintinline{mysql}{<} becomes \mintinline{mysql}{>=}
-    \item \mintinline{mysql}{>=} becomes \mintinline{mysql}{>}
-\end{enumerate}
-
-In addition to these 4 predicate types, NOT can also be used with other types of predicates which the library will not transform (e.g. \mintinline{mysql}{NOT LIKE} which cannot be easily transformed to remove the use of \mintinline{mysql}{NOT}).
+\end{code}
 
 \subsubsection{Transform \mintinline{mysql}{>} and \mintinline{mysql}{>=} to \mintinline{mysql}{<} and \mintinline{mysql}{<=}}
 
 Transforming \mintinline{mysql}{>} and \mintinline{mysql}{>=} to \mintinline{mysql}{<} and \mintinline{mysql}{<=} is done by simply reverting the predicate and the switching the left element of the comparison predicate with the right element of the predicate.
 
-\begin{listing}
+\begin{code}
 \begin{minted}{ruby}
 def transform_comparison_predicate(predicate)
   if predicate.is_a?(SQLParser::Statement::Greater)
@@ -377,7 +376,7 @@ end
 \end{minted}
 \caption{Transforming \mintinline{mysql}{>} and \mintinline{mysql}{>=} to \mintinline{mysql}{<} and \mintinline{mysql}{<=}}
 \label{fig:transforming_great}
-\end{listing}
+\end{code}
 
 \section{Library: extracting attributes from a canonicalized query}
 
@@ -452,6 +451,64 @@ This format allows easier display on the front-end of the conditions.
 
 \section{Library: partial grading}
 
+\begin{code}
+\begin{minted}{ruby}
+def match_score(column1, column2)
+  if column1 == column2
+    2
+  else
+    table_name1, column_name1 = column1.split('.')
+    table_name2, column_name2 = column2.split('.')
+
+    if table_name1 == table_name2
+      2.0 / levenshtein_distance(column_name1, column_name2)
+    else
+      0
+    end
+  end
+end
+\end{minted}
+
+\caption{Match score for columns}
+\end{code}
+
+\begin{code}
+\begin{minted}{ruby}
+def grade
+  if @student_distinct == @instructor_distinct
+    1.0
+  elsif @student_distinct == 'DISTINCT' && @instructor_distinct == 'DISTINCTROW'
+    0.5
+  elsif @student_distinct == 'DISTINCTROW' && @instructor_distinct == 'DISTINCT'
+    0.5
+  else
+    0
+  end
+end
+\end{minted}
+\caption{Partial grading of distinct filter}
+\end{code}
+
+\section{Library: providing hints}
+
+Currently, the hints provided are only at components level. Every wrong component has a possible hint if the match score is not 100\%. The library will check all compinents where the match score is not 100\% and select the most relevant hint. The relevance of the hint is pre-defined in the agloruthm based on the component type.
+
+\begin{tabularx}{\textwidth}{|l|X|X|}
+\hline
+\textbf{Importance} & \textbf{Component} &
+\textbf{Hint message}\\\hline
+\endhead
+1 & Tables & Are you sure you are selecting the right tables? \\\hline
+2 & Columns & Check what columns you are selecting. \\\hline
+3 & Group & Are you grouping by the correct columns? \\\hline
+4 & Where & Looks like you are selecting the right columns, but you are not selecting only the correct rows. \\\hline
+5 & Having & Looks like you are selecting the right columns, but you are not selecting only the correct rows. \\\hline
+6 & Distinct filter & What about duplicates? What does the exercise say? \\\hline
+7 & Limit & Are you selecting the correct number of rows? \\\hline
+8 & Order by & Are you ordering the rows correctly? \\\hline
+
+\end{tabularx}
+
 \section{Web application: user management}
 \subsection{Authentication}
 Web application is implemented using the devise library. Devise is the most popular authentication library built for Ruby on Rails with over 18000 stars on GitHub and over 33 million downloads on Ruby gems. In addition to a simple login/ logout functionality, devise provides many features out of the box: recovering password, sending and handling confirmation emails, integration with OAuth providers such as Facebook login, etc. An important aspect of any authentication system is how the password are stored in the database. Devise uses the bcrypt algorithm to hash passwords. bcrypt is a password hashing function \citep{wiki:bcrypt} that is used in OpenBSD and Suse Linux and trusted by many big companies such as Dropbox \citep{dropbox:authentication}, in addition to the users of devise and other authentication libraries.
@@ -465,7 +522,7 @@ Pundit defines the concept of policies which describe the authorization policy f
     \item A policy is instantiated in the controller with the current user and optionally with an instance of an object.
     \item The pundit policy files define methods whose naming convention follows the Ruby on Rails controller action names described in section: \ref{ch:design:web:controller}. That means that a policy defines the following methods: \mintinline{ruby}{def index?}, \mintinline{ruby}{def show?}, \mintinline{ruby}{def create?}, \mintinline{ruby}{def new?}, \mintinline{ruby}{def update?}, \mintinline{ruby}{def edit?}, \mintinline{ruby}{def destroy?}. The method returns whether the user has access to perform the action. An example of this can be seen in listing \ref{fig:policy_challenge}, which makes it clear that only admins can crete new challenges.
 
-\begin{listing}
+\begin{code}
 \begin{minted}{ruby}
 class ChallengePolicy < ApplicationPolicy
   # ...
@@ -477,9 +534,9 @@ end
 \end{minted}
 \caption{Example policy for Challenge creation}
 \label{fig:policy_challenge}
-\end{listing}
+\end{code}
     \item The pundit method provides the authorize a authorize method to a Ruby on Rails controllers that automatically instantiates a policy, and automatically calls the correct method. An example of the usage of the authorize method is seen in listing \ref{fig:policy_challenge_usage} where the authorize method is called to ensure that the user has access to the challenge. If the user is not authorized, then a response with HTTP code 403 is returned to the user (HTTP code 403 means status is ''Forbidden'').
-\begin{listing}[H]
+\begin{code}
 \begin{minted}{ruby}
 def show
   @challenge = Challenge.find_by!(id: params.require(:id))
@@ -489,7 +546,7 @@ end
 \end{minted}
 \caption{Example of policy usage}
 \label{fig:policy_challenge_usage}
-\end{listing}
+\end{code}
 \end{itemize}
 
 \section{Web application: front-end implementation}
@@ -507,7 +564,7 @@ The front-end design is currently built using three tools:
 \end{enumerate}
 
 %TC:ignore
-\begin{listing}
+\begin{code}
 \begin{minted}{scss}
 @for $i from 0 through 10 {
   .where-clause-depth-#{$i}::before {
@@ -519,7 +576,7 @@ The front-end design is currently built using three tools:
 \end{minted}
 \caption{Defining tree representation of WHERE}
 \label{fig:scss}
-\end{listing}
+\end{code}
 %TC:endignore
 
 \section{Testing}
@@ -537,7 +594,7 @@ Unit testing refers to the testing of individual units of code or groups of rela
 
 In Ruby and RSpec, tests for a class go in an associated \texttt{class\_name\_spec.rb} located in the \texttt{spec/} folder. RSpec's DSL provides multiple methods that allow most unit tests to be easy to read and understand as the resulting format of unit tests is similar to an English sentence.
 
-\begin{listing}[H]
+\begin{code}
 \begin{minted}{ruby}
 context "when there is *" do
   it "returns the query containing all columns in select" do
@@ -548,7 +605,7 @@ end
 \end{minted}
 \caption{Example of unit test for \mintinline{mysql}{*} transform}
 \label{fig:example_unit_test}
-\end{listing}
+\end{code}
 
 Both the application and the library have unit tests covering 100\% of the code. This means that every unit of code is executed at least once during the test suite. It is worth mentioning that the utility of code coverage is highly debated. Work done by \cite{msft_testing} at Microsoft Research showed that more test coverage does not necessarily result in fewer bugs. This can be associated with many factors such as the increased difficult in testing complex code. More importantly the fact that code coverage is not correlated with how users are using the app: if users spent most time using features that represent 1\% of the code, testing that 1\% is more important that achieving a high code coverage in the rest of the application. \cite{msft_testing} suggests that is more important to have better test coverage in the more complex part of the application.
 
@@ -561,7 +618,7 @@ A more important type of testing is integration testing. Integration testing ref
 \subsubsection{Integration testing in the web application}
 
 Integration testing in a web application has the role of checking if all MVC components. Integration testing was done using RSpec and Capybara. Capybara is a tool that simulates scenarios by directly controlling a web browser driver. That means that Capybara takes a set of instructions (such as click this button, type in this field, etc.) and executes them on actual browser. Integration testing with Capybara follows a very similar pattern to user stories. In fact, all user stories for a web application can be implemented as Capybara tests.
-\begin{listing}[H]
+\begin{code}
 \begin{minted}{ruby}
 context "logged in as an admin" do
   context "with correct queries" do
@@ -586,7 +643,7 @@ context "logged in as an admin" do
 end
 \end{minted}
 \caption{Example of integration test using Capybara.}
-\end{listing}
+\end{code}
 
 \subsection{Integration testing in the library}
 
@@ -594,7 +651,7 @@ Integration testing in the library is basically testing of the \mintinline{ruby}
 
 Integration tests are defined in a \texttt{.yml} file that is then loaded and then tests are created based on that file. Listing \ref{fig:dynamically_testing} shows how integration tests for the transformer are automatically defined from a file.
 
-\begin{listing}
+\begin{code}
 \begin{minted}{ruby}
 yaml = YAML.load_file("spec/fixtures/transformer_integration_tests.yml")
 
@@ -612,4 +669,4 @@ end
 \end{minted}
 \caption{Dynamically defining tests based on a file}
 \label{fig:dynamically_testing}
-\end{listing}
+\end{code}

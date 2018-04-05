@@ -3,7 +3,7 @@
 With the technological advancements of the 21st century, acquiring and interpreting
 data has become essential for almost all areas of the economy. The \cite{ec:big_data} argues that ''good use of data is at
 the centre of the future knowledge economy''.
-Furthermore, the \cite{gov:big_data} also believes ``data can truly be a catalyst for a society, an economy, a country that works for everyone''. With this in mind, more and more companies acknowledge the importance of analyzing data and employing data analysts in their companies. It is estimated that the US needs over 140.000 workers with ``data analytical expertise'' \citep{Lohr2012}.
+Furthermore, the \cite{gov:big_data} also believes that ``data can truly be a catalyst for a society, an economy, a country that works for everyone''. With this in mind, more and more companies acknowledge the importance of analyzing data and employing data analysts in their companies. It is estimated that the US needs over 140.000 workers with ``data analytical expertise'' \citep{Lohr2012}.
 
 One of the most popular data sources in any company is usually represented by the main database, which stores various data. 6 out of 10 most popular databases are Relation DBMS \citep{db_engine:statistics}.
 Accessing data in a RDBMS is done through \textit{Standard Query Language}
@@ -12,7 +12,7 @@ Accessing data in a RDBMS is done through \textit{Standard Query Language}
 Nowadays, SQL is being taught to almost all students in a Computer Science
 degree. This project will explore how assessing student's SQL
 assignments can be more accurate and computerized. There have been many attempts at improving this process made by various scholars: \cite{literature:activesql}, \cite{literature:assesql},
-\cite{literature:sqlify}, \cite{literature:xdata}. This paper and algorithm builds on the existing work of these scholars, especially that of \cite{literature:xdata} in their project - \textbf{XData}.
+\cite{literature:sqlify}, \cite{literature:xdata}. This project builds on the existing work of these scholars, especially that of \cite{literature:xdata} in their project - \textbf{XData}.
 
 \section{SQL assignments} \label{ch:introduction:assignments}
 
@@ -25,7 +25,8 @@ With all these advantages in mind, it is obvious that assignments SQL are essent
     \item A SQL table schema provided by the teacher. The schema includes
     the structure of the database tables and any relations between them.
     \item A SQL query that inserts the initial data in the database.
-    \item A description of the assessment and a correct query solution for the
+    \item A description of the assessment
+    \item A correct SQL query solution for the
     assignment.
 \end{itemize}
 
@@ -43,16 +44,22 @@ As previously mentioned, attempts at automating this process have been made. Var
 
 The main aim of this project is to provide a tool that can automate grading of students' tasks in SQL. In particular, the tool will produce individual grades and feedback for students who have completed a SQL assignment. This tool will be able to provide hints or suggestions when students make errors (for instance, suggest if an user is missing a table in their query, or if they are selecting the wrong columns).
 
-The project will also produce a web application where teachers will be able to create assignments for students, and where students will be able to provide solutions to them. If the assignment is marked as "practice" the student will see instant feedback on their work with hints provided if they make mistakes. If the assignment is not "practice", the student will only receive feedback after the assignment deadline. In addition, teachers will be able to see a breakdown of students' assignments based on the components of a query.
+The project will also produce a web application where teachers will be able to create assignments for students, and where students will be able to provide solutions to them. If the assignment is marked as "practice", the student will see instant feedback on their work with hints provided if they make mistakes. If the assignment is not "practice", the student will only receive feedback after the assignment deadline. In addition, teachers will be able to see a breakdown of students' assignments based on the components of a query.
 
 \section{Report structure}
 
-This project will begin with an overview of the available commercial applications for grading SQL, as well as a literature review, looking at existing work done on automating assessing SQL in academia. The chapter will conclude with the contributions this paper will bring to the current literature.
+This report will begin with an overview of the available commercial applications for grading SQL, as well as a literature review, looking at existing work done on automating assessing SQL in academia.
 
-The next chapter will present the requirements, specifications, and design of the application. The report will then talk about the implementation of the various requirements.
+The next chapter will first present the requirements of the applications. The requirements will be split in two parts: the requirements for the web application, and the requirements for the grading algorithm. The chapter will then continue with the specifications section. This section will first discuss the selection of programming language and the reason for choosing it. It will then present the development process, and finally it will present individual specifications for each requirement.
+
+The third chapter of the report will be the design one. The chapter will present the overall system architecture before moving on to the design of each component of the project (the web application and the library). Finally, the chapter will conclude with a section about the integration between the two components.
+
+The following chapter will discuss the implementation and testing of the application. This chapter will cover the most important and relevant implementation details from both the web application and the library. The main focus will be on the grading algorithm as this is the core output of the project. Finally, the chapter will end with a discussion of the testing mechanisms used to ensure that software runs according to the requirements.
 
 Following the chapter discussing implementation, the report will look at the professional issues associated with automated grading in a Computer Science environment. We will also look at how the project's code is tested to ensure correctness at the software level
 
-The following chapter will discuss how the project was evaluated. The reports looks at how the project fares in a real-life environment.
+The sixth chapter will present how the project was evaluated. We will look at three important indicators: how was the scope attained, how does the project compare with existing tools, and finally an empirical evaluation of the project using exercises from various data sources.
 
-Finally, the conclusion will look at the applicability of the application in a higher education course, its limitations and possible enhancements that could be done to overcome them or improve the tool.
+The next chapter will look at legal, social, ethical and professional issues associated with the project. The chapter will begin with a section that looks at the issues related to the use of automated grading and its implication. The next section will present how the project follows both BCS's Code of Conduct and BCS's Code of Good Practice. Finally, the chapter will end with a section talking about the use of open-source library.
+
+The 8th and last chapter of the main body of the report will present the conclusion of the project. \textbf{TODO}.

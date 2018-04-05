@@ -4,7 +4,7 @@
 
 As mentioned in section \ref{ch:reqandspec:sec:spec}, we have opted for a design that involves two applications. The main Rails on Rails app includes the grading library as one of its dependencies. In ruby, adding a library as a dependency simply is the equivalent of adding the code of the library directly. That means that the main application can now call the library's code without any other requirement such as running the library independently.
 
-\begin{figure}[h]
+\begin{figure}[H]
     \centering
     \includegraphics[width=(\linewidth / 2)]{Chapters/4-Design/sysarh.png}
     \caption{System architecture}
@@ -251,15 +251,28 @@ The application also defines the following relations between models:
 
 As the models are also represented in the database, each model will also be represented by a table in the database. The database has the following enhanced entity-relationship (EER) diagram:
 
-\begin{figure}[h]
+\begin{figure}
     \centering
-    \includegraphics[width=\textwidth/3*2]{Chapters/4-Design/database_schema.png}
+    \includegraphics[width=\textwidth/8*6]{Chapters/4-Design/database_schema.png}
     \caption{EER diagram of the web application}
 \end{figure}
 
 \subsection{Views}
 
+\begin{figure}[H]
+\centering
+\includegraphics[width=\textwidth]{Chapters/4-Design/components.png}
+\caption{Displaying the components of a submission}
+\label{fig:design}
+\end{figure}
+
+
 The role of views in a \texttt{MVC} application is to render data \citep{ruby_on_rails}. Most of the application is rendered in \texttt{HTML} (using \mintinline{ruby}{ActionView}) which is displayed in user's browser. The application includes multiple views that serve different purposes: displaying forms, displaying challenge details, etc.
+
+\subsubsection{Design}
+
+The design of the web application is not very advanced, most of it using just basic Bootstrap, combined with code highlighting provided by 3rd party libraries (example in figure \ref{fig:design}).
+
 
 \subsection{Controllers} \label{ch:design:web:controller}
 
@@ -268,6 +281,7 @@ The role of controllers is to \textit{orchestrate} the application. They receive
 \begin{tabularx}{\textwidth}{|c|X|X|X|}
     \hline
     & \textbf{URL} & \textbf{Ruby on Rails action name} & \textbf{Result} \\\hline
+    \endhead
     GET & /resource\_name & index & Get all resources \\\hline
     GET & /resource\_name/:id & show & Get resource with given id \\\hline
     GET & /resource\_name/new & new & Get the form for creating a new resource \\\hline
@@ -294,7 +308,7 @@ The web application built in this project includes the following controllers:
 
 \section{Example of interaction between user, web application and library and database}
 
-\begin{figure}[h]
+\begin{figure}[H]
     \centering
     \includegraphics[width=(\linewidth / 2)]{Chapters/4-Design/create_assignment.png}
     \caption{Overview of creating a new assignment}
@@ -305,4 +319,4 @@ The user never interacts directly with the library or the database system as all
 
 An example of such an interaction can be seen in figure \ref{fig:create_assignment}. The user makes a POST HTTP requests which is handles by the the Ruby on Rails web application in the \mintinline{ruby}{create} action from \mintinline{ruby}{ChallengesController}. Internally, the controller checks authentication and makes sure the user has the permission to create an assignment. After these checks are made, it then passes on SQL queries received to the library. The library compiles these queries and returns the results or errors. If there are no errors, the tool will create a new \mintinline{ruby}{Challenge} and return a success message to the user as a rendered HTML view. If errors are encountered, they are also rendered to the user as HTML, but no challenge is saved as the submitted parameters were not be valid.
 
-A similar interaction also occurs when a student submits a solution to an assignment created by an instructor. However,
+A similar interaction also occurs when a student submits a solution to an assignment created by an instructor.

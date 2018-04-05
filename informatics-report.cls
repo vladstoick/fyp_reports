@@ -15,6 +15,7 @@
 \usepackage[newfloat, draft=true]{minted}
 \setminted{autogobble}
 \setminted{breaklines}
+\usemintedstyle{borland}
 \usepackage{amssymb}
 \usepackage{pifont}
 \usepackage{enumitem}
@@ -41,6 +42,21 @@
 
 \setcounter{secnumdepth}{2} %Section numbering depth
 \setcounter{tocdepth}{1} %Table of Contents depth, section only
+
+\usepackage{placeins}
+
+\let\Oldsection\section
+\renewcommand{\section}{\FloatBarrier\Oldsection}
+
+\let\Oldsubsection\subsection
+\renewcommand{\subsection}{\FloatBarrier\Oldsubsection}
+
+\let\Oldsubsubsection\subsubsection
+\renewcommand{\subsubsection}{\FloatBarrier\Oldsubsubsection}
+
+\usepackage{caption}
+
+\newenvironment{code}{\singlespacing \captionsetup{type=listing}}{\doublespacing}
 
 %Text
 \usepackage{setspace}

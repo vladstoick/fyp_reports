@@ -69,11 +69,9 @@ The goal of this evaluation is to understand if our application will be able to 
 
 To assess the accuracy of the algorithm built, an evaluation of its ability to extract comparable components has been performed. We can define  a comparable component as one that was either canonicalized or cannot be rewritten in any other way. This aspect is the the most important one of the application, as it influences both the grade, as well as the hints received.
 
-\subsection{Evaluating the project with exercises from HackerRank}
+\subsection{Exercises from HackerRank}
 
 As mentioned in \ref{ch:lit:sec:tutor:comercial}, HackerRank provides multiple \texttt{SQL} exercises that can help a student practice his SELECT SQL abilities.
-
-
 
 HackerRank separates their SQL course in 4 parts as following:
 \begin{enumerate}
@@ -94,4 +92,17 @@ Overall, the algorithm performed very well in the basic queries, but had issues 
 
 It is clear that as queries go more complex, the likelihood of using sub-queries also increases which makes the algorithm unusable in these cases. However,
 
-\subsection{}
+\subsection{Exercises from \textit{Database System Concepts, 5th edition}}
+
+\textbf{Database System Concepts} is a textbook for learning about databases. The book has two chapters on SQL that contain 14 exercises with \mintinline{mysql}{SELECT} statements whose solution are, in our opinion, fairly basic (no complicated SQL functions, or complicated JOIN conditions, etc.). Out of these 14 exercises, more than half (9) contains sub-queries in their solutions. That means that these 9 are currently not supported by our tool. The rest of 5 queries can be transformed to comparable components.
+
+In addition to the \mintinline{mysql}{SELECT} statements, the two chapters about SQL also include \mintinline{mysql}{SELECT} and \mintinline{mysql}{DELETE} statements.
+
+Another interesting observation from looking at the exercises is that relational algebra is used throughout the book to teach students database concepts. Finally, the book also contains multiple choice questions that are not in the scope of the current project.
+
+\section{Limitations of the evaluation}
+\subsection{Resulting grade accuracy}
+Throughout the process of evaluation, we only looked at how well the algorithm can extract comparable components. However, we ignored the resulting grade as it is currently impossible for us to properly evaluate if a grade is good or not. To evaluate this, a teacher (or a TA) should compare the algorithm's grades to what grade they would give.
+
+\subsection{Queries tested}
+The evaluation process only looked at the ability of the algorithm to extract components from correct or almost correct queries. However, when testing with students, it might be the case that some of them come with solutions totally different that the correct one. It is very hard for us to accurately test this scenario, as the way of solving a problem might be totally different for someone.

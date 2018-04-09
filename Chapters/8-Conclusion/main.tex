@@ -1,17 +1,23 @@
 \chapter{Conclusion}
 
+The aim of the project was to build a tool that can help automate the assessment of SQL. For this, we have built a Ruby library and a Ruby on Rails web application that allows users to interact with the library. 
+
+The final project represents a good foundation for automating the grading of SQL assignments.  However, as the evaluation chapter revealed, more work has to be done before it can be successfully used in an University course. Currently, with a success rate of about 70\%, the application is not very close to being a reliable application that can be accurately used. With more time spent, almost all issues discovered during the evaluation phase could be solved. Even after these issues are solved, one must overcome the issues attached with the use of automated assessment that we discussed in chapter 7.
+
+We believe that such a tool is probably better suited to provide an active learning environment where students can practice their SQL skills. Although XData has been used to grade, we think that such algorithms can only work for basic queries. Once the queries become more advanced (e.g. multiple sub-queries, complicated joins, use of clause statements, etc.), the existing algorithms (including the one built by this project) will have issues providing an accurate grade. However, it is worth mentioning that the algorithm used, which is builds on top of XData, is most likely the most accurate one of all existing tools with the ability to provide accurate partial grading.
+
 \section{Contributions}
-This project built on the work of XData, which provides the most accurate grading mechanism of all the ones available. The project will have a grading algorithm relatively similar to the one used in XData. Compared to XData, the project will focus on MySQL (which is not supported in XData). Therefore, most contributions are related to the improvement of the XData, which is the most accurate existing tool for grading SQL.
+The project has grading algorithm relatively similar to the one used in XData. Most contributions are related to improving XData's functionality.
 
 \subsection{Improved partial grading}
-The partial grading provided by this tool builts on top of the partial grading provided by XData. While XData compares the individual parts of of the query's components, they are only looking for perfect matches (same name, same condition, same join type with same table etc.). On the other hand, the algorithm in this project uses a more advanced partial grading where small(er) mistakes (using the wrong join type, using a slightly different predicate, etc.) are not fully penalized. 
+The partial grading provided by this tool builds on top of the partial grading provided by XData. While XData compares the individual parts of of the query's components, they are only looking for perfect matches (same name, same condition, same join type with same table etc.). On the other hand, the algorithm in this project uses a more advanced partial grading where small(er) mistakes (using the wrong join type, using a slightly different column, etc.) are not fully penalized. 
 
 In addition, the grading of the Boolean components by not only looking at the individual conditions, but also at the Boolean expression structure using the expression tree represents an important contribution.
 \subsection{Ease of extending the application}
 
 Another important contribution this project brings to the existing literature is related to the easiness of extending the project. Out of the tools previously mentioned, only XData makes its source code public. Unfortunately, the code is clearly not meant to be open source. First of all, it doesn't provide any LICENSE which means that, legally, no one is able to reuse this code. Second of all, the code suffers from multiple problems: from files longer than 3000 lines to tens of lines of codes commented for no given reason, and a lack of proper documentation. Finally, the application lacks proper software testing, with only a few unit tests being included.
 
-The tool built by the project adheres to the default standards used by \textit{RuboCop}. In addition, the tool will is built of multiple small modules where each part handles on part of the grading process in order to ensure that the tool can be later extended. Finally, the tool is fully documented and has a strong test coverage made of unit tests and integration tests to ensure that new features added will not affect current functionality.
+The tool built by the project adheres to the default standards used by \textit{RuboCop}. In addition, the tool is built of multiple small modules where each part handles one part of the grading process in order to ensure that the tool can be later extended. Finally, the tool is fully documented and has a 100\% test coverage made of unit tests and integration tests to ensure that new features added will not affect current functionality.
 
 \section{Limitations}
 \begin{itemize}
@@ -20,20 +26,22 @@ The tool built by the project adheres to the default standards used by \textit{R
     \begin{itemize}
         \item Poor and untested support for sub-queries;
         \item No support for aliases: there is no support for aliasing columns or tables;
-        \item No support for other types of queries such as DELETE etc.
+        \item No support for other types of queries such as \mintinline{mysql}{DELETE}, \mintinline{mysql}{ÇREATE} etc.
+        \item No support for string functions
+        \item No support for math functions such as \mintinline{mysql}{ROUND}, \mintinline{mysql}{SQRT}
         \item It is very likely that a more thorough testing will reveal even more limitations associated with the usage of sql-parser.
     \end{itemize}
     \item Hints are not very specific: they just point out what component is wrong, but not what is wrong with it.
-    \item Web application's design and user experience is fairly basic. Due to the higher importance of the grading algorithm, less time has been spent on the web application. Currently, the web application is simply a MVP (minimum viable product) that serves as a user-accessible web interface for using the library.
+    \item Web application's design and user experience is fairly basic. Due to the higher importance of the grading algorithm, less time has been spent on the web application. Currently, the web application is simply a MVP (minimum viable product) that serves as a basic web interface for using the library.
 \end{itemize}
-
 
 \section{Future work}
 \begin{itemize}
-    \item \textbf{Adding support for new types of queries}: while the \mintinline{mysql}{SELECT} query is one of the most important type of queries considering its use in data analysis, there are other types of queries that must be learned before one can use SQL on its own (e.g. \mintinline{mysql}{CREATE}, \mintinline{mysql}{DROP}, etc.). Currently, all applications (including commercial, tutor, and XData) only support SELECT statements.
-    \item \textbf{Adding support for new RDBMS}: while focusing on MySQL allowed the project to focus on its core value (the grading algorithm), it also meant that no attention has been given to other database systems. In addition, the parser used sql-parser is built to support only MySQL syntax.
+    \item \textbf{Moving away from sql-parser}: throughout the evaluation process, we have continuously observed how poorly implemented sql-parser is. We have noticed many issues such as missing features, the inability to parse other RDBMS, etc. Unfortunately, due to time constraints we had to stick with using sql-parser and fixing it as much as possible. However, we observed how many issues are simply impossible to repair without a total rewrite. Therefore, any future work should start with moving away from sql-parser. One problem with moving away from sql-parser is that Ruby does not provide any alternative SQL parsers other than pg\_query which is also limited to a single RDBMS.
     \item \textbf{Implement a data generation system}: the work done by \citet{lit:xdata_d} in implementing a data generation for XData showed that such an algorithm will performed better than fixed data sets. This will ensure that false positives (when the query is wrong but is marked as correct due to the results matching) will be (almost) removed.
-    \item \textbf{Moving away from sql-parser}: the use of sql-parser is one of the biggest blockers in implementing support for new RDBMS. One problem with moving away from sql-parser is that Ruby does not provide any alternative SQL parsers other than pg\_query which is also limited to a single RDBMS.
+    \item \textbf{Adding support for new types of queries}: while the \mintinline{mysql}{SELECT} query is one of the most important type of queries considering its use in data analysis, there are other types of queries that must be learned before one can use SQL on its own (e.g. \mintinline{mysql}{CREATE}, \mintinline{mysql}{DROP}, etc.). Currently, almost all applications that we looked at only support SELECT statements.
+    \item \textbf{Adding support for relational algebra}: most University courses teach students relational algebra before SQL. By allowing student to practice relational algebra as well, they could further improve their knowledge about databases.
+    \item \textbf{Adding support for new RDBMS}: while supporting MySQL allowed the project to focus on its core value (the grading algorithm), it also meant that no attention has been given to other database systems.
     \item \textbf{Make the web application more user-friendly}: many areas of the web application can be improved: user management, overall design, error display. The front-end has a very modern architecture that uses SASS, webpack, and Bootstrap, which means that improving it should be simply a matter of spending time on it.
     \item \textbf{Make the hints more relevant}: currently the hints can only look at what SQL component is wrong, but it cannot pinpoint exactly what is wrong within that component. The library could be improved so it takes relevant hints during the grading comparison.
 \end{itemize}

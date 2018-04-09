@@ -1,6 +1,6 @@
 \chapter{Requirements and Specifications} \label{ch:reqandspec}
 
-As mentioned in section \ref{ch:introduction:sec:project_aims}, the overall goal of the project is to build a web application where teachers can create SQL assignments and students can submit solutions which are automatically graded. Therefore, the requirements of the project can be split in two parts: the requirements for the web application, and the requirements for the grading library, which can be implemented in a separate application. 
+As mentioned in section \ref{ch:introduction:sec:project_aims}, the goal of the project is to build a web application where teachers can create SQL assignments and students can submit solutions which are automatically graded. Therefore, the requirements of the project can be split in two parts: the requirements for the web application, and the requirements for the grading algorithm, which can be implemented in a separate library. 
 
 The library will be the main output of the project with the web application being just a basic interface for interacting with the library.
 
@@ -27,7 +27,7 @@ The library will be the main output of the project with the web application bein
 \subsection{Grading library}
 \begin{enumerate}[label=G-\arabic*]
   \item The library should be able to connect to a \text{MySQL} server;
-  \item The library should handle any error that might occur when communicating to the database (including failed execution of SQL queries, connection issues, etc.) and not throw away any unhandled errors;
+  \item The library should handle any error that might occur when communicating to the database (including failed execution of SQL queries, connection issues, etc.) and not throw any unhandled errors;
   \item The library should provide a safe way to execute arbitrary queries that prevents any possible malicious actions (including SQL injection);
   \item The library should implement a grading algorithm for assessing SQL assignments; \label{req:grading}
   \item The library should provide a detailed explanation of the grade and how it was assessed; \label{req:grading_explanation}
@@ -44,9 +44,9 @@ These requirements can easily be implemented in a multitude of languages and fra
     \item A Ruby on Rails application that will handle the requirements related to the web application.
 \end{enumerate}
 
-The decision to split the application in two separate components was made in order to separate the concerns and to allow for independent work to happen on each application. Furthermore, by separating the library from the main web application we gain the ability to use the library in other cases (e.g. for building a Command-Line Interface). This also means that the library does not care about how the grades are displayed, or how the exercises and submissions are stored in the database.
+The decision to split the application in two separate components was made in order to separate the concerns and to allow for independent work to happen on each application. Furthermore, by separating the library from the main web application we gain the ability to use the library in other use cases (e.g. for building a Command-Line Interface).
 
-Finally, by using a separate library, we can make use of encapsulation - hiding away the implementation details of grading from the web application, which is only meant to work with final results.
+Finally, by using a separate library, we can make use of the object oriented programming principle \textit{encapsulation}. Encapsulation, also known as "information hiding", minimizes interdependence between classes by providing a strong external interface \citep{Encapsulation}. For instance the web application does not know how a grade is obtained. Similarly, the library does not care about how the grades are displayed, or how the exercises and submissions are stored in the database.
 
 We have opted for a Ruby programming language based on the following criteria:
 
@@ -58,11 +58,11 @@ We have opted for a Ruby programming language based on the following criteria:
 
 \subsection{Development process} \label{ch:reqandspec:sec:spec:subsec:dev_process}
 
-Although the two parts of the project allow parallel development, throughout the development of the project a waterfall approach will be used. The general pattern of development is the following:
+Although the two parts of the project allow parallel development, throughout the development of the project a waterfall approach was used. The general pattern of development was the following:
 
 \begin{enumerate}
   \item Implement and test feature in library and publish new version of the library;
-  \item Update web application with the last version of library;
+  \item Update web application with the new version of library;
   \item Update the web application's existing code and test if any interfaces were changed;
   \item Implement and test new features in the web application.
 \end{enumerate}
@@ -72,8 +72,9 @@ All the new features added in the library and the web application will be tested
   \item \textbf{Git \& Github Pull requests (PR)}: development will be done using the Git Version Control System. All new features will be developed on a separate branch than master, and to get them in master a new PR will be submitted on GitHub.
   \item \textbf{Travis} is a continuous integration system that will execute all tests from any Git commit. This will ensure that all features added are working according to the tests, and that existing features are not affected by the new changes.
   \item \textbf{Codecov} is a tool that calculates the code coverage of code from a PR. Whenever a new commit is pushed to a PR, Codecov's code coverage is recalculated and a message is left on the PR.
-  \item \textbf{Rubocop} is a code linter that ensures the new code follows a standardized pattern (e.g. all strings use single quotes, not double quotes). While this tool does not test the code, by implementing code standards from the beginning we can ensure that they will be followed. Rubocop is executed on the CI step and is required for the CI to pass.
+  \item \textbf{Rubocop} is a code linter that ensures the new code follows a standardized pattern (e.g. all strings use single quotes, not double quotes). While this tool does not test the code, by implementing code standards from the beginning we can ensure that they will be followed.
 \end{itemize}
+
 Both Travis and Codecov will provide \textit{checks} on Github PRs that are required for a PR to be merged.
 
 \begin{figure}[htp]
@@ -98,15 +99,15 @@ The application (including the library) has only two dependencies:
   \textbf{R no.} & \textbf{Requirement details} & \textbf{Specification} \\\hline
   \endhead
   R-1 & The web application should be able to store data in a database & Use Ruby on Rails' ActiveRecord to store and access data in a MySQL server \\\hline
-  R-2 & The web application should allow users to log in and keep their data across sessions. & Use the devise library for authentication and provide sign-in and sign-up functionality using devise\\\hline
+  R-2 & The web application should allow users to log in and keep their data across sessions. & Use the devise library for authentication and provide sign-in and sign-up functionality using devise; Store session data in the database \\\hline
   R-3 &  The web application should allow users to have different roles within the application (e.g.Student/ Teacher/ TA) & Use pundit library for user roles management and authorization\\\hline
-  R-4 &  A teacher should be able to create assignments by giving a title, a description, and a SQL query that creates the tables and the relations between them, a SQL query that seeds the table with initial data, and a SQL query which represents the correct answer for the assignment. & Provide a web form built where teachers can create new assignments. The form will be built using Bootstrap, and the code editors should use codemirror to provide code syntax highlighting. \\\hline
-  R-5 &  The application should compile the queries provided and, if no errors are shown, save the assignment in the database and display the schema of the database and the data from it. & Use the compile method provide by the library and defined and display any error that may occur, otherwise save the record in the database. \\\hline
-  R-6 & The teacher should be able to edit the assignments after they are created. & Recompile the query and update the assignment in the database, if no errors are encountered. \\\hline
-  R-7 & The teacher should be able to delete assignments after they are created. & Deletes the challenge from database \\\hline
-  R-8 & A student should be able to provide solutions to assignments by submitting a SQL query. The web application should return the results instantly to the students after it assess the query. If any compilation errors are returned, they will be shown to the student. & Provide a web form built in Bootstrap that provides a code editor using codemirror. Assess the query using the assess method provided by the grading library. Save all submissions in the database after they have been assessed. \\\hline
-  R-9 & A student should be able to view the schema of the database for the assignment. & Render a HTML view that contains the schema of the database and provides a form written in Bootstrap and codemirror where they provide solutions. \\\hline
-  R-10 & A  student  should  be  able  to  see  hints  if  they make any  errors, or see a breakdown of the components from the teacher’s query and the ones used by their query. & Display a HTML view based on the results of their submission, after being graded. \\\hline
+  R-4 &  A teacher should be able to create assignments by giving a title, a description, and a SQL query that creates the tables and the relations between them, a SQL query that seeds the table with initial data, and a SQL query which represents the correct answer for the assignment. & Provide a web form built where teachers can create new assignments. The form will be built using Bootstrap, and the code editors should use codemirror to provide code syntax highlighting \\\hline
+  R-5 &  The application should compile the queries provided and, if no errors are shown, save the assignment in the database and display the schema of the database and the data from it. & Use the compile method provided by the library and display any error that may occur, otherwise save the record in the database \\\hline
+  R-6 & The teacher should be able to edit the assignments after they are created. & Recompile the query and update the assignment in the database, if no errors are encountered. If errors are encountered, display them to the user \\\hline
+  R-7 & The teacher should be able to delete assignments after they are created. & Delete the challenge from database \\\hline
+  R-8 & A student should be able to provide solutions to assignments by submitting a SQL query. The web application should return the results instantly to the students after it assess the query. If any compilation errors are returned, they will be shown to the student. & Provide a web form built in Bootstrap that provides a code editor using codemirror. Assess the query using the assess method provided by the grading library. Save all submissions in the database after they have been assessed. Display any compilation errors from the library. \\\hline
+  R-9 & A student should be able to view the schema of the database for the assignment. & Render a HTML view that contains the schema of the database \\\hline
+  R-10 & A  student  should  be  able  to  see  hints  if  they make any  errors, or see a breakdown of the components from the teacher’s query and the ones used by their query. & Display a HTML that display the hint provided by the library. \\\hline
   R-11 & SQL typing on the web application should be made in a browser-based code editor that provides syntax highlighting. & Provide a code editor written in codemirror. \\\hline
   R-12 & Teachers should be able to have a graphical view of the results and download the results in  a CSV format.   In  addition,  they  should  be  able  to  view  the  results  of individual submissions. & Provide a download CSV button that gets the best submission of each student for a certain assignment. Provide a HTML view that displays the result of a individual submission. \\\hline
 \end{tabularx}
@@ -120,7 +121,7 @@ The application (including the library) has only two dependencies:
 G-1 & The library should be able to connect to a MySQL server. & Connect to a MySQL database using Ruby library mysql2. \\\hline
 G-2 & The library should handle any error that might occur when communicating to the database (including failed execution of SQL queries, connection issues, etc.) and not throw away any unhandled errors. & Handle errors returned by mysql2 and return library-specific errors. \\\hline
 G-3 & The library should provide a safe way to execute arbitrary queries that prevents any possible malicious actions (including SQL injection). & Execute the queries in a separate database using a user that has restricted permissions. \\\hline
-G-4 & The library should implement a grading algorithm for assessing SQL assignments. & Implement a grading algorithm that follows the grading algorithm defined by XData. This means the grading will compare the components of two canonicalized queries. Therefore, the algorithm will contain two components: the canonicalization of a SQL query and the comparison of components. \\\hline
+G-4 & The library should implement a grading algorithm for assessing SQL assignments. & Implement a grading algorithm that follows the grading algorithm defined by XData. This means the grading algorithm will compare the components of two canonicalized queries. Therefore, the algorithm will also include a canonicalization step \\\hline
 G-5 & The library should provide a detailed explanation of the grade and how it was assessed. & Return a grade for each component and the components after they have been canonicalized. \\\hline
 G-6 & The library should provide hints about how a student could fix his query, if the query is wrong & Return the most relevant hint for the query. The relevance of the hint will be determined by two factors: the grade of the component, and a predefined importance ordering of components\\\hline
 G-7 & The library should expose a method that allows the compilation of an assignment given a schema query, a seed query, and a correct query. The application should return the schema and the data of the database if no errors are encountered. If errors are encountered, then it should return the appropriate error(s). & Execute the queries and handle any errors if they occur and return them as mentioned in specifications for G-1 and G-2. Extract the tables created in the schema query and then extract the data inserted in the seed query. \\\hline

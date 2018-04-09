@@ -19,9 +19,11 @@
 \usepackage{amssymb}
 \usepackage{pifont}
 \usepackage{enumitem}
-\usepackage{tikz}
 \usepackage{lmodern}
 \usepackage{tikz}
+\usepackage{pgfplots}
+\setminted{fontsize=\linespread{1}\normalfont\ttfamily}
+\def\verbatim@font{\linespread{1}\normalfont\ttfamily}
 \usetikzlibrary{calc,trees,positioning,arrows,chains,shapes.geometric,%
     decorations.pathreplacing,decorations.pathmorphing,shapes,%
     matrix,shapes.symbols}
@@ -33,6 +35,7 @@
 \usepackage{lmodern}
 \usepackage{smartdiagram}
 \usepackage{tikz}
+\usepackage{hyperref}
 \usetikzlibrary{calc,positioning,arrows}
 \renewcommand{\familydefault}{\rmdefault}
 \newcolumntype{Y}{>{\small\raggedright\arraybackslash}X}
@@ -56,7 +59,7 @@
 
 \usepackage{caption}
 
-\newenvironment{code}{\singlespacing \captionsetup{type=listing}}{\doublespacing}
+\newenvironment{code}{\captionsetup{type=listing}}{}
 
 %Text
 \usepackage{setspace}

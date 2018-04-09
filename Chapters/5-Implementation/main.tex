@@ -54,6 +54,7 @@ Considering the fact that the library executes arbitrary queries, the risks asso
 \label{fig:creating_new_user}
 \end{code}
 %TC:endignore
+
 All used queries are performed using this user, instead of using the root one. The temporary user is also deleted at the end of the compile/ assessment execution. This way, the user input can only damage the created database for his assessment. However, this is not an issue considering these are short-lived databases which are destroyed at the end of the assessment.
 
 The only way to get around the limitation of the restricted user would be to use a different user. Changing the user in MySQL is not possible through a MySQL command. The only possible way would be to use the \texttt{system} command which executes bash code in combination with the \texttt{mysql -uroot --password} bash command if they knew the root password, but not the url of the database. However, the \texttt{system} command is only available on connections opened with the \texttt{mysql} bash command, which is not the case for \texttt{mysql2} - so users can not exploit this method. Furthermore, the user has limited permissions so he can not run commands such as \mintinline{mysql}{SET PASSWORD} to change existing users.
@@ -74,13 +75,16 @@ In the end, due to the issues described previously, a decision was made to conti
     \item Support for \mintinline{mysql}{LIMIT} and \mintinline{mysql}{OFFSET}
     \item Support for using a qualified column in \mintinline{mysql}{ORDER BY} clause
     \item Support for using the columns number in \mintinline{mysql}{GROUP} clause
-    \item Support for using subqueries in \mintinline{mysql}{FROM} clause
+    \item Support for using sub-queries in \mintinline{mysql}{FROM} clause
+    \item Fix problems with two strings being considered just one string
+    \item Support for \texttt{\%} operation.
+    \item Support for arithemtic operations in \mintinline{mysql}{FROM}, \mintinline{mysql}{Order}
 \end{itemize}
 
 The process of adding a new feature was formed of multiple parts:
 \begin{enumerate}
     \item Create a \mintinline{ruby}{Node} class representing the new clause, if a new clause was implemented. A \mintinline{ruby}{Node} represents an element of a query: a clause, a number, a word, a condition, etc. For instance, the newly created \texttt{LIMIT} node has the following structure:
-    \begin{code}\centering
+\begin{code}
 \begin{minted}{ruby}
 class LimitClause < Node
     def initialize(limit, offset)
@@ -96,6 +100,7 @@ end
 \end{code}
     \item Update existing \mintinline{ruby}{Node} to link to the newly created node. For instance, the \mintinline{ruby}{LimitClause} node had to be linked to the \mintinline{ruby}{TableExpression} node.
     \item Add the new parsing rules to Racc grammar file. For instance, when adding the LIMIT clause there are three options: there is only a limit number, there are two numbers for limit and offset separated by the word \texttt{OFFSET}, or the two numbers are separated by a comma:
+    
 \begin{code}
     \centering
     \begin{minted}{ruby}
@@ -111,7 +116,7 @@ end
 \end{enumerate}
 
 \subsection{Using sql-parser to parse SQL queries}
-Using sql-parser to parse SQL queries is straight forward. The library provides the \mintinline{mysql}{scan_str} which transform a string (the SQL query) into a SQL Abstract Syntax Tree (AST). The AST is formed of multiple nodes. As previously mentioned in the lat section, a node is a component of the clause. The general structure of the AST for a SELECT query has the following structure is represented in figure \ref{fig:select_ast}.
+Using sql-parser to parse SQL queries is straight forward. The library provides the \mintinline{mysql}{scan_str} which transform a string (the SQL query) into a SQL Abstract Syntax Tree (AST). The AST is formed of multiple nodes. As previously mentioned in the lat section, a node is a component of the clause. The general structure of the AST for a SELECT query is presented in figure \ref{fig:select_ast}.
 
 \begin{figure}[ht]
 \centering
@@ -132,12 +137,11 @@ Using sql-parser to parse SQL queries is straight forward. The library provides 
 \caption{General structure of the SELECT's AST}
 \label{fig:select_ast}
 \end{figure}
-All the leaves presented in figure \ref{fig:select_ast} also have their nodes. For instance, SelectList has an array of columns which can be of many types (QualifiedColumn, Column, AggregateColumn). In addition, what we previously called Boolean components (WHERE and HAVING) have both subtrees representing the Boolean expression.
+All the leaves presented in figure \ref{fig:select_ast} also have their nodes. For instance, SelectList has an array of columns which can be of many types (QualifiedColumn, Column, AggregateColumn, etc.). In addition, what we previously called Boolean components (WHERE and HAVING) have both subtrees representing the Boolean expression.
 
 
 \subsection{Using sql-parser to change queries}
-sql-parser also provides a way to change a parsed query (which is now a combination of multiple Nodes) back to a SQL query. Unfortunately, the process of internally modifying the structure of a query is not well-defined and there is no public interface exposed. Each node has one or more private instance variable that represent the values of the Node. For instance, the limit node shown in listing \ref{fig:limit_clause}, has two such variables: limit and offset. sql-parser does not provide a way to change these properties as all Nodes just expose a reader method (set using \mintinline{ruby}{attr_reader}). Fortunately, ruby provides a \mintinline{ruby}{instance_variable_set} method while allows anyone with a reference to an object to change that object's internal variables even if they are private and no setter is exposed. It is worth mentioning that while this approach might work, the use of this method \mintinline{ruby}{instance_variable_set} goes against the principle of encapsulation, and might mean that a future update to the library can lead to errors, if the internal structure of Nodes is modified.
-
+sql-parser also provides a way to change a parsed query (which is now a combination of multiple Nodes) back to a SQL query. Unfortunately, the process of internally modifying the structure of a query is not well-defined and there is no public interface exposed. Each node has one or more private instance variable that represent the values of the Node. For instance, the limit node shown in listing \ref{fig:limit_clause}, has two such variables: limit and offset. sql-parser does not provide a way to change these properties as all Nodes just expose a reader method (set using \mintinline{ruby}{attr_reader}). Fortunately, Ruby provides a \mintinline{ruby}{instance_variable_set} method while allows anyone with a reference to an object to change that object's internal variables even if they are private and no setter is exposed. It is worth mentioning that while this approach might work, the use of this method \mintinline{ruby}{instance_variable_set} goes against the principle of encapsulation, and might mean that a future update to the library can lead to errors, if the internal structure of Nodes is modified.
 \begin{code}
 \begin{minted}{ruby}
 @parsed_query.query_expression.list.instance_variable_set(
@@ -152,15 +156,13 @@ After a query is modified, sql-parser exposes a \mintinline{ruby}{.to_sql} metho
 
 \section{Library: handling sub-queries}
 
-Unfortunately, compared to XData, the library can not handle submissions with XData. Some work to implement this has been attempted and is available in the current code: canonicalization of sub-queries, comparison of nested queries, updating sql-parser to support sub-queries in the FROM clause, etc. Unfortunately, this work has been added very late in the project which meant that most existing work had to be redone. The work had to be redone because some parts of the library made the assumption that no sub-queries are present. For instance, the library contains multiple canonicalizations that make use of nested sub-queries. 
-
-If the library will encounter a sub-query, it will return an error explaining that such SQL queries are not currently supported.
+Unfortunately, compared to XData, the library can not handle submissions that include sub-queries. Some work to implement this has been attempted and is available in the current code: canonicalization of sub-queries, comparison of nested queries, updating sql-parser to support sub-queries in the FROM clause, etc. Unfortunately, this work has been added very late in the project which meant that most existing work had to be redone for supporting sub-queries. The work had to be redone because some parts of the library made the assumption that no sub-queries are present.
 
 \section{Library: canonicalizing queries}
 
 As previously mentioned in section \ref{ch:lit:sec:improved_canon}, the library will implement a canonicalization step. The library implements all canonicalizations done by XData and described in section \ref{ch:lit:sec:canonicalization}, and the additional ones presented in section \ref{ch:lit:sec:improved_canon}. All transformations use sql-parser's transformations ability combined with the ability to make queries on the database.
 
-As mentioned in the design section \ref{ch:lit:sec:improved_canon}, the canonicalization process is done sequentially in a specific order that ensures that later canonicalizations do not make changes that make changes incompatible with previously executed transformations. 
+As mentioned in the design section \ref{ch:lit:sec:improved_canon}, the canonicalization process is done sequentially in a specific order that ensures that later canonicalizations do not make changes that are incompatible with previously executed transformations. 
 
 \begin{code}
 \begin{minted}{ruby}
@@ -200,16 +202,14 @@ end.flatten
 Transforming ambiguous columns to unambiguous columns is done in a similar way as the previous transformations. The transformation makes use of two important aspects:
 \begin{enumerate}
     \item One can determine the full list of columns for each table expression component, by running \mintinline{mysql}{SHOW COLUMNS FROM table_name}.
-    \item An ambiguous column can belong to a single table from a query. If a column cannot be made qualified, then MySQL will automatically return the \textit{column xx in field list is ambiguous''} error.
+    \item An ambiguous column can belong to a single table from a query. If a column cannot be made qualified, then MySQL will automatically return the ''\textit{column xx in field list is ambiguous''} error.
 \end{enumerate}
 
 Therefore to transform an ambiguous column we must go through the full list of columns of each table until we find a match. We then transform the ambiguous column to a qualified column. This process can be seen in listing \ref{fig:find_table}.
 
-An additional type of ambiguous column type is the position reference one which is found in the GROUP and ORDER clauses. In these two clauses, one can write \mintinline{mysql}{ORDER BY 2} where 2 references the second column from the select list. To find the qualified column that the position column references we need to look at the select list (after it was transformed to qualified columns) and select the right position: \mintinline{ruby}{@parsed_query.query_expression.list.columns[column.value - 1]} (position columns start at index 1, while arrays start at 0 in ruby).
+An additional type of ambiguous column type is the position reference one which is found in the GROUP and ORDER clauses. In these two clauses, one can write \mintinline{mysql}{ORDER BY 2} where 2 references the second column from the select list. To find the qualified column that the position column references we need to look at the select list (after it was transformed to qualified columns) and select the right position: \mintinline{ruby}{@parsed_query.query_expression.list.columns[column.value - 1]} (position columns start at index 1, while arrays start at 0 in Ruby).
 
-Finally, the library also considers the aggregate column types which inside might contain a ambiguous column as well. Aggregate columns are of type \mintinline{ruby}{SQLParser::Statement::Aggregate} which has an attribute of type column. Therefore, we need to apply the same transformation to the inner column attribute.
-
-In sql-parser, unqualified columns have the parsed node type \mintinline{ruby}{SQLParser::Statement::Column}, while qualified columns have the parsed node type \mintinline{ruby}{SQLParser::Statement::QualifiedColumn}.
+Finally, the library also considers the aggregate column types which might contain an ambiguous column as well. Aggregate columns are of type \mintinline{ruby}{SQLParser::Statement::Aggregate} which has an attribute of type column. Therefore, we need to apply the same transformation to the inner column attribute. The same logic is also applied to arithmetic operations.
 
 %TC:ignore
 \begin{code}
@@ -222,7 +222,7 @@ def find_table_for(column_name)
   end
 end
 \end{minted}
-\caption{Determining the table for an ambigous column with name}
+\caption{Determining the table for an ambiguous column with name}
 \label{fig:find_table}
 \end{code}
 %TC:endignore
@@ -232,7 +232,7 @@ end
 
 The transformation of equivalent columns is a two step process. First, the library determines which components are equivalent, and after that it updates all column references to the minimum lexicographically string from the equivalence group.
 
-To determine the equivalent columns the library builds a undirected graph $G(V, E)$:
+To determine the equivalent columns the library builds an undirected graph $G(V, E)$:
 \begin{enumerate}
     \item $V$: the list of all columns used in the table expression
     \item $E$: there is an edge between $v_1$ and $v_2$ if and only if in the table expression there is a join condition based on the equality of $v_1$ and $v_2$. To build the edges, the library goes over all join conditions from the SQL statement and builds the edges as described above.
@@ -280,16 +280,16 @@ end
 \caption{Transforming equivalent columns}
 \end{code}
 
-\subsection{Transforming conditions from WHERE, HAVING, and JOIN contiions}
-The WHERE and HAVING clauses and the JOIN conditions are represented by a Boolean expression tree. When transforming these clauses it is essential to ensure that the structure of the expression is not altered - that is the before and after expressions are equivalent. To do this, the algorithm traverses the tree recursively and only replaces leafs with either another leaf (in the case of transforming a condition to another) or to a inner node that has two leaves (in the case of transforming a condition to multiple another).
+\subsection{Transforming conditions from WHERE, HAVING, and JOIN conditions}
+The WHERE and HAVING clauses and the JOIN conditions are represented by a Boolean expression tree. When transforming these clauses it is essential to ensure that the structure of the expression is not altered - that is the before and after expressions are equivalent. To do this, the algorithm traverses the tree recursively and only replaces leafs with either another leaf. Similarly it only transforms inner nodes to other inner nodes.
 
 \begin{code}
 \begin{minted}{ruby}
-def transform_between_queries(statement)
+def traverse_tree(statement)
   if statement.is_a?(SQLParser::Statement::SearchCondition)
     statement.class.new(
-      transform_between_queries(statement.left),
-      transform_between_queries(statement.right)
+      traverse_tree(statement.left),
+      traverse_tree(statement.right)
     )
   elsif statement.is_a?(SQLParser::Statement::Between)
     transform_between_query(statement)
@@ -298,12 +298,12 @@ def transform_between_queries(statement)
   end
 end
 \end{minted}
-\caption{Example of traversing a Boolean expression tree}
+\caption{Example of traversing a Boolean expression tree looking for \mintinline{mysql}{BETWEEN}}
 \end{code}
 
 \subsubsection{Transforming \mintinline{mysql}{BETWEEN} predicate}
 
-A \mintinline{mysql}{column BETWEEN a AND B} predicate will be transformed to two separate predicates: \mintinline{mysql}{column >= a} and \mintinline{mysql}{column <= b}. 
+A \mintinline{mysql}{column_name BETWEEN num1 AND num2} predicate will be transformed to two separate predicates: \mintinline{mysql}{column >= num1} and \mintinline{mysql}{column <= num2}. 
 
 \begin{code}
 \begin{minted}{ruby}
@@ -382,7 +382,7 @@ end
 
 While sql-parser provides the AST tree for the parsed query, it does not explicitly provide the components of a query. To extract them, the library makes use of the AST and makes various transformations in order to extract the components to a desired data structure. The resulting data structure might be similar to the AST (which is true for most components), but it might also be different (for instance the FROM expression is represented as a tree in the AST, but we can more clearly represent it as an array).
 
-These extraction and transformation process help in two important ways. First of all, it extracts the data in a format that can be easily compared and identical across similar types of expressions (for instance the structure of the WHERE component is identical to the structure of the HAVING component). In addition, the format can be defined in a way that is also easy to display on the front-end.
+These extraction and transformation process help in three important ways. First of all, it extracts the data in a format that can be easily compared. Second of all, same types components can be extract to a similar format (for instance the structure of the WHERE component is identical to the structure of the HAVING component). In addition, the format can be defined in a way that is also easy to display on the front-end.
 
 \subsection{Making defaults explicit}
 
@@ -392,15 +392,19 @@ Every \texttt{MySQL} query has certain default attributes. For instance, every \
 
 \begin{itemize}
     \item \textbf{Selected columns} are simply represented as an array of strings, where every string represents a selected column.
-    \item \textbf{Order by} clause is represented represented as an array of strings, where every string represents a column.
+    \item \textbf{Order by} clause is represented represented as an array of hashes. Each has two attributes:
+    \begin{enumerate}
+        \item \mintinline{ruby}{column}: a string representing the full column name
+        \item \mintinline{ruby}{position}: an integer representing the position in the order clause
+    \end{enumerate}
     \item \textbf{Group} clause is represented represented as an array of strings, where every string represents a column.
-    \item \textbf{Tables} clause is represented represented as an array of hashes. There are two types of hashes that can be included:
+    \item \textbf{Tables} clause is represented represented as an array of hashes.
     \begin{enumerate}
         \item The first element of the array is the base table (or sub-query) of the \mintinline{mysql}{FROM} clause. The item is represented as a hash containing the following keys:
         \begin{enumerate}
             \item \mintinline{ruby}{type}: either \mintinline{ruby}{"table"} or \mintinline{ruby}{"Subquery"}
             \item \mintinline{ruby}{table}: the table name or \mintinline{ruby}{attributes} in the case of sub-queries
-            \item \mintinline{ruby}{sql}: the element represented a SQL expression
+            \item \mintinline{ruby}{sql}: the element represented as a SQL expression
         \end{enumerate}
         \item The other elements (the joined tables or joined sub-queries) of the array are represented as a hash containing the following keys:
         \begin{enumerate}
@@ -410,12 +414,12 @@ Every \texttt{MySQL} query has certain default attributes. For instance, every \
             \item \mintinline{ruby}{sql}: the full SQL expression for the join (e.g. \mintinline{mysql}{LEFT JOIN table_name ON condition1 AND CONDITION 2})
         \end{enumerate}
     \end{enumerate}
-    \item \textbf{Distinct filter} is represented a simple string.
-    \item \textbf{Limit} clause is represented as a hash with two keys: limit and offset. If the limit is not defined then the value \texttt{inf} will be associated with it.
+    \item \textbf{Distinct filter} is represented as a simple string.
+    \item \textbf{Limit} clause is represented as a hash with two keys: limit and offset. If the limit or offset are not defined, then the value \texttt{inf} will be associated with it.
     \item \textbf{Where and Having} clauses are represented identically. There are two formats in which the library represents them as each format is used for a different purpose:
     \begin{enumerate}
         \item For the grading algorithm, these clauses are represented as binary trees.
-        \item For the web application, these clauses are represented as trees (but not binary trees), where search conditions (e.g. \mintinline{mysql}{AND}) can have more than two children. For instance, the binary tree for expression ($ a \land b \land c$) has the following structure: 
+        \item For the web application, these clauses are represented as trees (but not binary trees), where search conditions (e.g. \mintinline{mysql}{AND} can have more than two children). For instance, the binary tree for expression ($ a \land b \land c$) has the following structure: 
         
 \Tree[
     .$\land$
@@ -451,6 +455,34 @@ This format allows easier display on the front-end of the conditions.
 
 \section{Library: partial grading}
 
+In the design section of the algorithm (\ref{ch:des:grading}) we split the 8 components of a \mintinline{mysql}{SELECT} query into 3 types of components: simple, array, and Boolean. This section will not present the full implementation, as the algorithm was already explained. For the full code, please refer to the source code under the folder \texttt{lib/sql\_assess/grader/base.rb}.
+
+Implementing the algorithm was straightforward once the design of the algorithm has been finalized. In general, the algorithm makes use of only basic iterations and if statements.
+
+\subsection{Grading simple components}
+As mentioned in the design section (\ref{ch:des:grading}), grading simple components is simply comparing the attributes of two  hashes with a finite amount of keys. In these cases (limit and distinct filter), the grade is simply calculated by looking at the two extracted components.
+
+\begin{code}
+\begin{minted}{ruby}
+def grade
+  if @student_distinct == @instructor_distinct
+    1.0
+  elsif @student_distinct == 'DISTINCT' && @instructor_distinct == 'DISTINCTROW'
+    0.5
+  elsif @student_distinct == 'DISTINCTROW' && @instructor_distinct == 'DISTINCT'
+    0.5
+  else
+    0
+  end
+end
+\end{minted}
+\caption{Partial grading of distinct filter}
+\end{code}
+
+\subsection{Grading array components}
+
+In the case of array components, graders just need to implement a \mintinline{ruby}{match_score} as the \mintinline{ruby}{Grader::Base} class already implements the algorithm described in section \ref{ch:des:grading}. As previously mentioned, the code for the array grading is included in the Appendix.
+
 \begin{code}
 \begin{minted}{ruby}
 def match_score(column1, column2)
@@ -472,26 +504,34 @@ end
 \caption{Match score for columns}
 \end{code}
 
-\begin{code}
-\begin{minted}{ruby}
-def grade
-  if @student_distinct == @instructor_distinct
-    1.0
-  elsif @student_distinct == 'DISTINCT' && @instructor_distinct == 'DISTINCTROW'
-    0.5
-  elsif @student_distinct == 'DISTINCTROW' && @instructor_distinct == 'DISTINCT'
-    0.5
+\subsection{Grading Boolean components}
+
+Grading Boolean components requires the implementation of two additional methods:
+\begin{enumerate}
+    \item A method that extracts the leaves of the tree:
+    \begin{code}
+    \begin{minted}{ruby}
+def get_leaves(node)
+  if node.nil?
+    nil
+  elsif node[:is_inner] == false
+    node
   else
-    0
+    [
+      get_leaves(node[:left_clause]),
+      get_leaves(node[:right_clause]),
+    ].flatten
   end
 end
-\end{minted}
-\caption{Partial grading of distinct filter}
-\end{code}
+    \end{minted}
+    \caption{Extracting the leaves of the tree}
+    \end{code}
+    \item A method that implements the grading of the tree. The algorithm was already described in the design section. For the full code, please refer to \texttt{lib/sql\_assess/grader/where.rb} 
+\end{enumerate}
 
 \section{Library: providing hints}
 
-Currently, the hints provided are only at components level. Every wrong component has a possible hint if the match score is not 100\%. The library will check all compinents where the match score is not 100\% and select the most relevant hint. The relevance of the hint is pre-defined in the agloruthm based on the component type.
+Currently, the hints provided are only at component level. Every wrong component has a possible hint if the match score is not 100\%. The library will check all components where the match score is not 100\% and select the most relevant hint. The relevance of the hint is predefined in the algorithm based on the component type.
 
 \begin{tabularx}{\textwidth}{|l|X|X|}
 \hline
@@ -502,7 +542,7 @@ Currently, the hints provided are only at components level. Every wrong componen
 2 & Columns & Check what columns you are selecting. \\\hline
 3 & Group & Are you grouping by the correct columns? \\\hline
 4 & Where & Looks like you are selecting the right columns, but you are not selecting only the correct rows. \\\hline
-5 & Having & Looks like you are selecting the right columns, but you are not selecting only the correct rows. \\\hline
+5 & Having & Looks like you are selecting the right columns, but you are not selecting the correct rows. \\\hline
 6 & Distinct filter & What about duplicates? What does the exercise say? \\\hline
 7 & Limit & Are you selecting the correct number of rows? \\\hline
 8 & Order by & Are you ordering the rows correctly? \\\hline
@@ -511,7 +551,7 @@ Currently, the hints provided are only at components level. Every wrong componen
 
 \section{Web application: user management}
 \subsection{Authentication}
-Web application is implemented using the devise library. Devise is the most popular authentication library built for Ruby on Rails with over 18000 stars on GitHub and over 33 million downloads on Ruby gems. In addition to a simple login/ logout functionality, devise provides many features out of the box: recovering password, sending and handling confirmation emails, integration with OAuth providers such as Facebook login, etc. An important aspect of any authentication system is how the password are stored in the database. Devise uses the bcrypt algorithm to hash passwords. bcrypt is a password hashing function \citep{wiki:bcrypt} that is used in OpenBSD and Suse Linux and trusted by many big companies such as Dropbox \citep{dropbox:authentication}, in addition to the users of devise and other authentication libraries.
+Authentication in the web application is implemented using the devise library. Devise is the most popular authentication library built for Ruby on Rails with over 18000 stars on GitHub and over 33 million downloads on Ruby gems. In addition to a simple login/ log-out functionality, devise provides many features out of the box: recovering password, sending and handling confirmation emails, integration with OAuth providers such as Facebook login, etc. An important aspect of any authentication system is how the password are stored in the database. Devise uses the bcrypt algorithm to hash passwords. bcrypt is a password hashing function \citep{wiki:bcrypt} that is used in OpenBSD and Suse Linux and trusted by many big companies such as Dropbox \citep{dropbox:authentication},
 
 \subsection{Authorization}
 To handle roles the application uses two tools: a role field on the user database, and the pundit library. pundit is a library that provides ''authorization through Object Oriented Design and pure Ruby classes'' \citep{github:pundit}. Every user has a role that is either student or admin.
@@ -520,7 +560,7 @@ Pundit defines the concept of policies which describe the authorization policy f
 
 \begin{itemize}
     \item A policy is instantiated in the controller with the current user and optionally with an instance of an object.
-    \item The pundit policy files define methods whose naming convention follows the Ruby on Rails controller action names described in section: \ref{ch:design:web:controller}. That means that a policy defines the following methods: \mintinline{ruby}{def index?}, \mintinline{ruby}{def show?}, \mintinline{ruby}{def create?}, \mintinline{ruby}{def new?}, \mintinline{ruby}{def update?}, \mintinline{ruby}{def edit?}, \mintinline{ruby}{def destroy?}. The method returns whether the user has access to perform the action. An example of this can be seen in listing \ref{fig:policy_challenge}, which makes it clear that only admins can crete new challenges.
+    \item The pundit policy files define methods whose naming convention follows the Ruby on Rails controller action names described in section: \ref{ch:design:web:controller}. That means that a policy defines the following methods: \mintinline{ruby}{def index?}, \mintinline{ruby}{def show?}, \mintinline{ruby}{def create?}, \mintinline{ruby}{def new?}, \mintinline{ruby}{def update?}, \mintinline{ruby}{def edit?}, \mintinline{ruby}{def destroy?}. The method returns whether the user has access to perform the action on a certain object or class. An example of this can be seen in listing \ref{fig:policy_challenge}, which makes it clear that only admins can create new challenges.
 
 \begin{code}
 \begin{minted}{ruby}
@@ -535,7 +575,7 @@ end
 \caption{Example policy for Challenge creation}
 \label{fig:policy_challenge}
 \end{code}
-    \item The pundit method provides the authorize a authorize method to a Ruby on Rails controllers that automatically instantiates a policy, and automatically calls the correct method. An example of the usage of the authorize method is seen in listing \ref{fig:policy_challenge_usage} where the authorize method is called to ensure that the user has access to the challenge. If the user is not authorized, then a response with HTTP code 403 is returned to the user (HTTP code 403 means status is ''Forbidden'').
+    \item The pundit method provides the authorize a authorize method to a Ruby on Rails controllers that automatically instantiates a policy, and automatically calls the correct method. An example of the usage of the authorize method is seen in listing \ref{fig:policy_challenge_usage} where the authorize method is called to ensure that the user has access to the challenge. If the user is not authorized, then a response with HTTP code 403 Forbidden is returned to the user.
 \begin{code}
 \begin{minted}{ruby}
 def show
@@ -550,11 +590,11 @@ end
 \end{itemize}
 
 \section{Web application: front-end implementation}
-Although not too much time has been spent on the web application front-end, the development of it tried to take in consideration future work that might occur on it. 
+Although not too much time has been spent on the web application front-end, the way it has been built has tried to take in consideration future work that might occur on it. 
 
-Therefore, the web application front-end is built using a modern architecture. While pages used to be powered in general mostly be HTML and CSS only, nowadays JavaScript (JS) is almost always used in all applications. However, JS in large applications is no longger used just by including a file in HTML's \mintinline{html}{<head>}. The increased popularity of JS frameworks (React, Angular, Vue, etc.) meant that most JS apps now use a build system. To prepare for this, the web application uses Webpack.  Webpack is the  module bundler endorsed by both React and Vue.
+Therefore, the web application front-end is built using a modern architecture. While pages used to be powered in general mostly be HTML and CSS only, nowadays JavaScript (JS) is almost always used in all applications. However, JS in large applications is no longer used just by including a file in HTML's \mintinline{html}{<head>}. The increased popularity of JS frameworks (React, Angular, Vue, etc.) meant that most JS apps now use a build system. To prepare for this, the web application uses Webpack.  Webpack is the  module bundler endorsed by both React and Vue.
 
-In addition to just bundling JS, Webpack also bundles other types of files. One important type of file bundled, is represented by SCSS files which are used in the web application. SCSS is, according to their creators, ''CSS with superpowers''. SCSS provides many additional features such as functions that allows us to create styles faster. For instance, the CSS styles for display the where clause as a tree with 10 levels, can be easily defined in just a few lines of code presented in listing \ref{fig:scss}, instead of defining a style for each level.
+In addition to just bundling JS, Webpack also bundles other types of files. One important type of file bundled is represented by SCSS files which are used in the web application. SCSS is, according to their creators, ''CSS with superpowers''. SCSS provides many additional features such as functions that allows us to create styles faster. For instance, the CSS styles for display the where clause as a tree with 10 levels, can be easily defined in just a few lines of code presented in listing \ref{fig:scss}, instead of defining a style for each level.
 
 The front-end design is currently built using three tools:
 \begin{enumerate}
@@ -580,17 +620,15 @@ The front-end design is currently built using three tools:
 %TC:endignore
 
 \section{Testing}
-
 Testing any software is an essential step in the development process. The purpose of software testing is to validate that the software is behaving as intended \citep{lit:software_testing}. Testing can also be used to check if the requirements have been correctly implemented. As previously mentioned in the development process section (\ref{ch:reqandspec:sec:spec:subsec:dev_process}), testing has been an integral part of the project, with new tests written for all new features added.
 
-Testing is especially important in dynamic languages like Ruby where due to the lack of types and a compile step. Ruby uses what is sometimes called \textit{duck typing} which is enforced using the duck test: ''If it walks like a duck and it quacks like a duck, then it must be a duck.'' \citep{wiki:duck_typing}. That means that Ruby only cares if an object implements a method, it does not care about the type of the object on which the method is called. While this might help developers move faster, duck typing can lead to an increased amount of errors as no type checking is done until run-time. In addition, without a proper test suite, re-factoring can become a nightmare for someone working in a dynamic programming language as he has no confidence that the changes he is making will not affect the application.
+Testing is especially important in dynamic languages like Ruby where due to the lack of types and a compile step. Ruby uses what is sometimes called \textit{duck typing} which is enforced using the duck test: ''If it walks like a duck and it quacks like a duck, then it must be a duck.'' \citep{wiki:duck_typing}. That means that Ruby only cares if an object implements a method, it does not care about the type of the object on which the method is called. While this might help developers move faster, duck typing can lead to an increased amount of errors as no type checking is done until run-time. In addition, without a proper test suite, re-factoring can become a nightmare for someone working in Ruby as he has no confidence that the changes he is making will not affect the existing ones.
 
 To ensure that the software is working according to the requirements and that future re-factors will be made easily, the project uses two types of testing: unit testing and integration testing.
 
-
 \subsection{Unit testing}
 
-Unit testing refers to the testing of individual units of code or groups of related units \citep{unit_testing}. The purpose of unit testing is to make sure the code meets the specifications \citep{Olan2003}. In order to unit test the two parts of the application, we are using RSpec which is a DSL testing tool for Ruby \citep{wiki:rspec}. Overall, the library and the web application have in total over 250 unit tests.
+Unit testing refers to the testing of individual units of code or groups of related units \citep{unit_testing}. The purpose of unit testing is to make sure the code meets the specifications \citep{Olan2003}. In order to unit test the two parts of the application, we are using RSpec which is a DSL testing tool for Ruby \citep{wiki:rspec}. Overall, the library and the web application have in total over 300 unit tests.
 
 In Ruby and RSpec, tests for a class go in an associated \texttt{class\_name\_spec.rb} located in the \texttt{spec/} folder. RSpec's DSL provides multiple methods that allow most unit tests to be easy to read and understand as the resulting format of unit tests is similar to an English sentence.
 
@@ -607,17 +645,18 @@ end
 \label{fig:example_unit_test}
 \end{code}
 
-Both the application and the library have unit tests covering 100\% of the code. This means that every unit of code is executed at least once during the test suite. It is worth mentioning that the utility of code coverage is highly debated. Work done by \cite{msft_testing} at Microsoft Research showed that more test coverage does not necessarily result in fewer bugs. This can be associated with many factors such as the increased difficult in testing complex code. More importantly the fact that code coverage is not correlated with how users are using the app: if users spent most time using features that represent 1\% of the code, testing that 1\% is more important that achieving a high code coverage in the rest of the application. \cite{msft_testing} suggests that is more important to have better test coverage in the more complex part of the application.
+Both the application and the library have unit tests covering 100\% of the code. This means that every unit of code is executed at least once during the test suite. However, no test suite can ensure that bugs are not presented even if it has 100\% test coverage. It is worth mentioning that the utility of code coverage is highly debated. Work done by \cite{msft_testing} at Microsoft Research showed that more test coverage does not necessarily result in fewer bugs. This can be associated with many factors such as the increased difficulty in testing complex code. More importantly is the fact that code coverage is not correlated with how users are using the app: if users spent most time using features that represent 1\% of the code, testing that 1\% is more important that achieving a high code coverage in the rest of the application. \cite{msft_testing} suggests that it is more important to have better test coverage in the more complex part of the application.
 
-To avoid the issues described by \cite{msft_testing}, both test suites try to include more tests for sensitive parts of the applications (such as canonicalization and grading process), with less tests covering non-core functionality. 
+To avoid the issues described by \cite{msft_testing}, both test suites try to include more tests for sensitive parts of the applications (such as canonicalization and grading process), with less tests covering non-core functionality.
 
 \subsection{Integration testing}
 
-A more important type of testing is integration testing. Integration testing refers to the testing of the interaction between multiple units of the application. Integration testing makes sure that all units of an application work together according to the requirement. Integration tests are especially important in dynamic languages as classes interfaces are not checked. That means that a class will not know for sure that calling a method will succeed until run-time.
+A more important type of testing is integration testing. Integration testing refers to the testing of the interaction between multiple units of the application. Integration testing makes sure that all units of an application work together according to the requirements.
 
 \subsubsection{Integration testing in the web application}
 
 Integration testing in a web application has the role of checking if all MVC components. Integration testing was done using RSpec and Capybara. Capybara is a tool that simulates scenarios by directly controlling a web browser driver. That means that Capybara takes a set of instructions (such as click this button, type in this field, etc.) and executes them on actual browser. Integration testing with Capybara follows a very similar pattern to user stories. In fact, all user stories for a web application can be implemented as Capybara tests.
+
 \begin{code}
 \begin{minted}{ruby}
 context "logged in as an admin" do
@@ -645,7 +684,7 @@ end
 \caption{Example of integration test using Capybara.}
 \end{code}
 
-\subsection{Integration testing in the library}
+\subsection{Integration testing in the library} \label{ch:impl:sec:testing:subsec:integ_library}
 
 Integration testing in the library is basically testing of the \mintinline{ruby}{Assesor} class which internally uses all other classes. Testing the assessor is equivalent with testing the integration between the database connection and secure querying, the canonicalization process, the extraction of components, and finally the grading process. In addition to the integration tests for the assessor, other integration tests are represented by the tests for \mintinline{ruby}{QueryTransformer} which uses all transformations to transform a query, and the \mintinline{ruby}{QueryAttributeExtractor} which extract all attributes from a query.
 
@@ -654,10 +693,9 @@ Integration tests are defined in a \texttt{.yml} file that is then loaded and th
 \begin{code}
 \begin{minted}{ruby}
 yaml = YAML.load_file("spec/fixtures/transformer_integration_tests.yml")
-
 yaml.each do |test|
-  it "transform #{test['query']} to #{test['expected_result']}" do
-    # Seed date
+  it "transforms #{test['query']} to #{test['expected_result']}" do
+    # Seed data
     connection.multiple_query(test["schema"])
     # Check if queries from file are correct
     connection.query(test["query"])

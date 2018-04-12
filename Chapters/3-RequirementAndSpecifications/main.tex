@@ -21,7 +21,7 @@ The library will be the main output of the project with the web application bein
   \item A student should be able to view the schema of the database for the assignment;
   \item A student should be able to see hints if they make any errors, or see a breakdown of the components from the teacher's query and the ones used by their query;
   \item SQL typing on the web application should be made in a browser-based code editor that provides syntax highlighting;
-  \item Teachers should be able to have a graphical view of the results and download the results in a CSV format. In addition, they should be able to view the results of individual submissions.
+  \item Teachers should be able to have a tabular view of the results and download the results in a CSV format. In addition, they should be able to view the results of individual submissions.
 \end{enumerate}
 
 \subsection{Grading library}
@@ -44,9 +44,9 @@ These requirements can easily be implemented in a multitude of languages and fra
     \item A Ruby on Rails application that will handle the requirements related to the web application.
 \end{enumerate}
 
-The decision to split the application in two separate components was made in order to separate the concerns and to allow for independent work to happen on each application. Furthermore, by separating the library from the main web application we gain the ability to use the library in other use cases (e.g. for building a Command-Line Interface).
+The decision to split the application in two separate components was made in order to separate the concerns and to allow for independent work to happen on each component. Furthermore, by separating the library from the main web application we gain the ability to use the library in other use cases (e.g. for building a Command-Line Interface).
 
-Finally, by using a separate library, we can make use of the object oriented programming principle \textit{encapsulation}. Encapsulation, also known as "information hiding", minimizes interdependence between classes by providing a strong external interface \citep{Encapsulation}. For instance the web application does not know how a grade is obtained. Similarly, the library does not care about how the grades are displayed, or how the exercises and submissions are stored in the database.
+By using a separate library, we can also make use of the object oriented programming principle of \textit{encapsulation}. Encapsulation, also known as "information hiding", minimizes interdependence between classes by providing a strong external interface \citep{Encapsulation}. For instance the web application does not know how a grade is obtained. Similarly, the library does not care about how the grades are displayed, or how the exercises and submissions are stored in the database.
 
 We have opted for a Ruby programming language based on the following criteria:
 
@@ -71,7 +71,7 @@ All the new features added in the library and the web application will be tested
 \begin{itemize}
   \item \textbf{Git \& Github Pull requests (PR)}: development will be done using the Git Version Control System. All new features will be developed on a separate branch than master, and to get them in master a new PR will be submitted on GitHub.
   \item \textbf{Travis} is a continuous integration system that will execute all tests from any Git commit. This will ensure that all features added are working according to the tests, and that existing features are not affected by the new changes.
-  \item \textbf{Codecov} is a tool that calculates the code coverage of code from a PR. Whenever a new commit is pushed to a PR, Codecov's code coverage is recalculated and a message is left on the PR.
+  \item \textbf{Codecov} is a tool that calculates the code coverage of code from a PR. Whenever a new commit is pushed to a PR, Codecov's code coverage is recalculated and a message is left on the PR. Codecov's free tier only supports one repository, so codecov is only enabled for the library. Code coverage is calculated locally on the web application repository.
   \item \textbf{Rubocop} is a code linter that ensures the new code follows a standardized pattern (e.g. all strings use single quotes, not double quotes). While this tool does not test the code, by implementing code standards from the beginning we can ensure that they will be followed.
 \end{itemize}
 
@@ -89,7 +89,7 @@ Both Travis and Codecov will provide \textit{checks} on Github PRs that are requ
 The application (including the library) has only two dependencies:
 \begin{itemize}
   \item A MySQL server
-  \item The ability to run Ruby (and Ruby on Rails)
+  \item The ability to run Ruby (and Ruby on Rails also known as RoR)
 \end{itemize}
 
 \subsection{Specifications for the web application}
@@ -109,7 +109,7 @@ The application (including the library) has only two dependencies:
   R-9 & A student should be able to view the schema of the database for the assignment. & Render a HTML view that contains the schema of the database \\\hline
   R-10 & A  student  should  be  able  to  see  hints  if  they make any  errors, or see a breakdown of the components from the teacher’s query and the ones used by their query. & Display a HTML that display the hint provided by the library. \\\hline
   R-11 & SQL typing on the web application should be made in a browser-based code editor that provides syntax highlighting. & Provide a code editor written in codemirror. \\\hline
-  R-12 & Teachers should be able to have a graphical view of the results and download the results in  a CSV format.   In  addition,  they  should  be  able  to  view  the  results  of individual submissions. & Provide a download CSV button that gets the best submission of each student for a certain assignment. Provide a HTML view that displays the result of a individual submission. \\\hline
+  R-12 & Teachers should be able to have a tabular view of the results and download the results in  a CSV format.   In  addition,  they  should  be  able  to  view  the  results  of individual submissions. & Provide a download CSV button that gets the best submission of each student for a certain assignment. Provide a HTML view that displays the result of a individual submission. \\\hline
 \end{tabularx}
 
 \subsection{Specification for the grading library}

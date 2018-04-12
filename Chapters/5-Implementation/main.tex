@@ -1,7 +1,9 @@
 \chapter{Implementation and testing}
 
+This chapter will discuss implementation and testing on both parts of the application. This chapter does not include all implementation details, instead it focuses on the more important and challenging aspects of the project. For more details about the exact implementation, a reading of the source code is suggested.
+
 \section{Library: connecting to a MySQL server and executing queries} \label{ch:impllib:sec:connecting}
-To connect to a MySQL server, the application uses the Ruby library mysql2. The library, or gem as it's called in Ruby, provides the implementation for connecting, querying and retrieving results from a MySQL server. mysql2 is a binding to MySQL's C library libmysql. mysql2 is the more modern and lean version of the mysql version. Compared to mysql gem, mysql2 gem can be 2 times faster and is built with Ruby in mind. Furthermore, mysql2 is also much more popular with over 42 million downloads on RubyGems, compared to mysql's 8 million downloads.
+To connect to a MySQL server, the library uses the Ruby library mysql2. The library, or gem as it's called in Ruby, provides the implementation for connecting, querying and retrieving results from a MySQL server. mysql2 is a binding to MySQL's C library libmysql. mysql2 is the more modern and lean version of the mysql version. According to the project's Github page, mysql2 can be 2 times faster than mysql. Furthermore, mysql2 is also much more popular with over 42 million downloads on RubyGems, compared to mysql's 8 million downloads.
 
 To connect to a MySQL server, the library requires the address and port of the server, and an account and password. The account must be the root user or at least one that has the permission to create and drop databases, to create and drop users, and to grant permissions to an user.
 
@@ -166,12 +168,17 @@ As mentioned in the design section \ref{ch:lit:sec:improved_canon}, the canonica
 
 \begin{code}
 \begin{minted}{ruby}
+# @param [String] query input query
+# @return [String] canonicalized query
+# @raise [CanonicalizationError] if any parsing errors are encountered
 def transform(query)
   TRANSFORMERS.each do |transformer_class|
     query = transformer_class.new(@connection).transform(query)
   end
 
   query
+rescue SQLParser::Parser::ScanError, Racc::ParseError
+  raise CanonicalizationError
 end
 \end{minted}
 \caption{Sequential transformation of a query}
@@ -285,16 +292,16 @@ The WHERE and HAVING clauses and the JOIN conditions are represented by a Boolea
 
 \begin{code}
 \begin{minted}{ruby}
-def traverse_tree(statement)
-  if statement.is_a?(SQLParser::Statement::SearchCondition)
-    statement.class.new(
-      traverse_tree(statement.left),
-      traverse_tree(statement.right)
+def transform_tree(node)
+  if node.is_a?(SQLParser::Statement::SearchCondition)
+    node.class.new(
+      transform_tree(node.left),
+      transform_tree(node.right)
     )
-  elsif statement.is_a?(SQLParser::Statement::Between)
-    transform_between_query(statement)
+  elsif node.is_a?(SQLParser::Statement::Between)
+    transform_between(node)
   else
-    statement
+    node
   end
 end
 \end{minted}
@@ -307,10 +314,10 @@ A \mintinline{mysql}{column_name BETWEEN num1 AND num2} predicate will be transf
 
 \begin{code}
 \begin{minted}{ruby}
-def transform_between_query(predicate)
+def transform_between(between)
   SQLParser::Statement::And.new(
-    SQLParser::Statement::GreaterOrEquals.new(predicate.left, predicate.min),
-    SQLParser::Statement::LessOrEquals.new(predicate.left, predicate.max)
+    SQLParser::Statement::GreaterOrEquals.new(between.left, between.min),
+    SQLParser::Statement::LessOrEquals.new(between.left, between.max)
   )
 end
 \end{minted}
@@ -415,7 +422,7 @@ Every \texttt{MySQL} query has certain default attributes. For instance, every \
         \end{enumerate}
     \end{enumerate}
     \item \textbf{Distinct filter} is represented as a simple string.
-    \item \textbf{Limit} clause is represented as a hash with two keys: limit and offset. If the limit or offset are not defined, then the value \texttt{inf} will be associated with it.
+    \item \textbf{Limit} clause is represented as a hash with two keys: limit and offset. If the limit is not defined, then the value \texttt{inf} will be associated with it.
     \item \textbf{Where and Having} clauses are represented identically. There are two formats in which the library represents them as each format is used for a different purpose:
     \begin{enumerate}
         \item For the grading algorithm, these clauses are represented as binary trees.
@@ -596,13 +603,6 @@ Therefore, the web application front-end is built using a modern architecture. W
 
 In addition to just bundling JS, Webpack also bundles other types of files. One important type of file bundled is represented by SCSS files which are used in the web application. SCSS is, according to their creators, ''CSS with superpowers''. SCSS provides many additional features such as functions that allows us to create styles faster. For instance, the CSS styles for display the where clause as a tree with 10 levels, can be easily defined in just a few lines of code presented in listing \ref{fig:scss}, instead of defining a style for each level.
 
-The front-end design is currently built using three tools:
-\begin{enumerate}
-    \item Bootstrap: an open-source frontend framework that provides CSS and JS for most common web page components.
-    \item codemirror: a basic code editor that can be included in HTML page
-    \item  highlight.js: a basic code highlighter (for static fields) that can be included in a HTML page.
-\end{enumerate}
-
 %TC:ignore
 \begin{code}
 \begin{minted}{scss}
@@ -618,6 +618,25 @@ The front-end design is currently built using three tools:
 \label{fig:scss}
 \end{code}
 %TC:endignore
+
+The front-end design is currently built using three tools:
+\begin{enumerate}
+    \item Bootstrap: an open-source frontend framework that provides CSS and JS for most common web page components.
+    \item codemirror: a basic code editor that can be included in HTML page. An example of highlight.js is presented in figure \ref{fig:codemirror}.
+\begin{figure}
+    \centering
+    \includegraphics[width=\textwidth]{Chapters/5-Implementation/codemirror.png}
+    \caption{Example of codemirror}
+    \label{fig:codemirror}
+\end{figure}
+    \item  highlight.js: a basic code highlighter (for static fields) that can be included in a HTML page. An example of highlight.js is presented in figure \ref{fig:highlightjs}.
+\begin{figure}
+    \centering
+    \includegraphics[width=\textwidth]{Chapters/5-Implementation/higlightjs.png}
+    \caption{Example of highlight.js}
+    \label{fig:highlightjs}
+\end{figure}
+\end{enumerate}
 
 \section{Testing}
 Testing any software is an essential step in the development process. The purpose of software testing is to validate that the software is behaving as intended \citep{lit:software_testing}. Testing can also be used to check if the requirements have been correctly implemented. As previously mentioned in the development process section (\ref{ch:reqandspec:sec:spec:subsec:dev_process}), testing has been an integral part of the project, with new tests written for all new features added.

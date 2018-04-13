@@ -144,7 +144,7 @@ Another issue that showed up was the use of sub-queries in complicated queries. 
 
 \textbf{Database System Concepts} is a textbook for learning about databases. The book has two chapters on SQL that contain 14 exercises with \mintinline{mysql}{SELECT} statements whose solutions are, in our opinion, fairly basic (no complicated SQL functions, or complicated JOIN conditions, etc.). Out of these 14 exercises, more than half (9) contains sub-queries in their solutions. That means that these 9 are currently not supported by our tool. The rest of 5 queries can be transformed to comparable components.
 
-In addition to the \mintinline{mysql}{SELECT} statements, the two chapters about SQL also include \mintinline{mysql}{SELECT} and \mintinline{mysql}{UPDATE} statements. Another interesting observation from looking at exercises from the book is that relational algebra is used throughout the book to teach students database concepts. Furthermore, the book also contains multiple choice questions that are not in the scope of the current project.
+In addition to the \mintinline{mysql}{SELECT} statements, the two chapters about SQL also include \mintinline{mysql}{CREATE} and \mintinline{mysql}{UPDATE} statements. Another interesting observation from looking at exercises from the book is that relational algebra is used throughout the book to teach students database concepts. Furthermore, the book also contains multiple choice questions that are not in the scope of the current project.
 
 \section{Limitations of the evaluation}
 \subsection{Resulting grade accuracy}
@@ -153,7 +153,7 @@ Throughout the process of evaluation, we only looked at how well the algorithm c
 \subsection{Queries tested}
 The evaluation process only looked at the ability of the algorithm to extract components from correct or almost correct queries. However, when testing with students, it might be the case that some of them come with solutions totally different that the correct one. It is very hard for us to accurately test this scenario, as the way of solving a problem might be totally different for someone.
 
-\subsection{HackerRrank exercises}
+\subsection{HackerRank exercises}
 Although HackerRank has over 60 exercises, most of them are very similar. This could affect the evaluation as there were only a few types of errors reported. A more diverse exercise sample would probably result in either more diverse errors, or perhaps in more supported queries.
 
 \section{Conclusion of the evaluation}

@@ -35,7 +35,8 @@
 \usepackage{lmodern}
 \usepackage{smartdiagram}
 \usepackage{tikz}
-\usepackage{hyperref}
+\usepackage[hidelinks]{hyperref}
+\usepackage[final]{pdfpages}
 \usetikzlibrary{calc,positioning,arrows}
 \renewcommand{\familydefault}{\rmdefault}
 \newcolumntype{Y}{>{\small\raggedright\arraybackslash}X}

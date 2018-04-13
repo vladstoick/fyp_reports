@@ -9,11 +9,12 @@ The source code history is also available on GitHub
     \item Parser fork: \url{https://github.com/vladstoick/sql-parser}. In addition the parser is also published on RubyGems \url{https://rubygems.org/gems/sql-parser-vlad}.
 \end{enumerate}
 
-\section{Grading library source code}
+The first three sections of this chapter introduce each part of the code, with the next 3 sections presenting the code.
+
+\section{Grading library}
 
 A good way to navigate the source code is to start in the assessor class defined in \path{lib/sql_assess/assesor.rb}. The assessor is the public interface of the library.
 
-The description of each class was also included in the design chapter.
 
 \begin{tabularx}{\textwidth}{|X|X|}
     \hline
@@ -59,7 +60,7 @@ The description of each class was also included in the design chapter.
     \path{spec/tests/**/class_name_spec.yml} & Tests that test the \path{class_name} \\\hline
 \end{tabularx}
 
-\section{Web application source code}
+\section{Web application}
 
 The web application follows a pattern similar to an MVC framework (views, models, controllers). The rails app contains many folders by default, but the most important ones are:
 \begin{tabularx}{\textwidth}{|X|X|}
@@ -85,3 +86,14 @@ The web application follows a pattern similar to an MVC framework (views, models
     \path{app/spec/requests/**.rb} & Unit tests for controllers \\\hline
     \path{app/spec/factories/**.rb} & Factories for models \\\hline
 \end{tabularx}
+
+\section{Sql parser}
+
+As the sql-parser is an existing library, this section will only include the added feature in the form of a diff file. This is to clearly indicate what work was done by this project. For the full code please refer to the GitHub repo or the source code zip. The zip code will contain the full source code.
+
+\section{Code for library}
+\includepdf[pages=1-122]{Appendices/sourcecodelibrary.pdf}
+\section{Code for web app}
+\includepdf[pages=1-72]{Appendices/sourcecodeweb.pdf}
+\section{Code for sql parser}
+\includepdf[pages=1-7]{Appendices/sourcecodesql.pdf}

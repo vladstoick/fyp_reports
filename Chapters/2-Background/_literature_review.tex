@@ -104,7 +104,7 @@ just as correct.
   \mintinline{mysql}{SELECT t2.id FROM t1 JOIN t2 on t1.id = t2.id;}
   \item \mintinline{mysql}{SELECT a from t1 where a.id > 1;}
 
-  \mintinline{mysql}{SELECT a from a.id >= 2;}
+  \mintinline{mysql}{SELECT a from t1 a.id >= 2;}
 \end{itemize}
 
 Therefore, we can see that a simple comparison of elements will not be efficient in spotting if two queries are actually different. Therefore, before we can compare the two queries, we need a way to transform the two queries to a similar form. Without those transformations, the simple comparison may indicate
@@ -116,7 +116,7 @@ To overcome the issues described above, \cite{literature:xdata} perform a transf
 
 \begin{itemize}
     \item \textbf{Attribute disambiguation}: Unqualified columns are column names whose interpretation depends on the current context \citep{mysql:documentation}. For example, the column identifier \mintinline{mysql}{id} can represent two or more different actual columns depending on the context. To avoid this uncertainty, all columns must be transformed to qualified columns.
-    \item \textbf{Removing \mintinline{mysql}{BETWEEN}}: a \mintinline{mysql}{BETWEEN} can be transformed to two separate \mintinline{mysql}{<=} and \mintinline{mysql}{>=}. This will ensure that a query written with a \mintinline{mysql}{BETWEEN} will be matched with a query written with a \mintinline{mysql}{<} and a \mintinline{mysql}{>}.
+    \item \textbf{Removing \mintinline{mysql}{BETWEEN}}: a \mintinline{mysql}{BETWEEN} can be transformed to two separate \mintinline{mysql}{<=} and \mintinline{mysql}{>=}. This will ensure that a query written with a \mintinline{mysql}{BETWEEN} will be matched with a query written with a \mintinline{mysql}{<=} and a \mintinline{mysql}{>=}.
     \item \textbf{Transforming \mintinline{mysql}{NOT}}: Another transformation used is transforming \mintinline{mysql}{NOT} conditions by removing the \mintinline{mysql}{NOT} and changing the condition to the opposite one. For instance: \mintinline{mysql}{NOT a > 1} is the same condition as \mintinline{mysql}{a <= 1}.
     \item \textbf{Transform \mintinline{mysql}{>} and \mintinline{mysql}{>=} to \mintinline{mysql}{<} and \mintinline{mysql}{<=}}
     \item \textbf{Transforming equivalent columns}: When looking at queries that include one or more tables, it is often the case that a column reference is equivalent across tables - which is always the case for foreign keys. For instance, in a query with the following table expression: \begin{minted}{mysql}

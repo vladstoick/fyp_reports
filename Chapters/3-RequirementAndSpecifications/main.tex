@@ -44,7 +44,7 @@ These requirements can easily be implemented in a multitude of languages and fra
     \item A Ruby on Rails application that will handle the requirements related to the web application.
 \end{enumerate}
 
-The decision to split the application in two separate components was made in order to separate the concerns and to allow for independent work to happen on each component. Furthermore, by separating the library from the main web application we gain the ability to use the library in other use cases (e.g. for building a Command-Line Interface).
+The decision to split the application in two separate components was made in order to separate the concerns and to allow for independent work to happen on each component. Furthermore, by separating the library from the main web application, we gain the ability to use the library in other use cases (e.g. for building a Command-Line Interface).
 
 By using a separate library, we can also make use of the object oriented programming principle of \textit{encapsulation}. Encapsulation, also known as "information hiding", minimizes interdependence between classes by providing a strong external interface \citep{Encapsulation}. For instance the web application does not know how a grade is obtained. Similarly, the library does not care about how the grades are displayed, or how the exercises and submissions are stored in the database.
 

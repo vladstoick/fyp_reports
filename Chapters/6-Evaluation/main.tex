@@ -11,7 +11,7 @@ According to \cite{lit:definining_success}, scope is generally understood as bot
 
 The required functionality of the application was previously defined in the Requirements chapter. The functionality was split in two parts: the web application and the grading library.
 
-When looking at the functionality required for the web application, we believe that all of the presented requirements have been fully met. Most of these requirements can be manually checked and most these requirements (all with the exception of R1 and R11) are fully tested in the integration test suite. The tests are located under \texttt{spec/features/**\_spec.rb} in the web application source code folder.
+When looking at the functionality required for the web application, all of the presented requirements appear to have been fully met. Most of these requirements can be manually checked and most these requirements (all with the exception of R1 and R11) are fully tested in the integration test suite. The tests are located under \texttt{spec/features/**\_spec.rb} in the web application source code folder.
 
 
 However, when looking at the requirements for the grading library, it is much harder to assess the degree to which these were met. Most of the requirements are impossible to measure, especially considering that some of them included a research phase. For instance, evaluating requirements such as ''The library should implement a grading algorithm for assessing SQL assignments'' is realistically impossible. While the library implements such an algorithm, it is very difficult to assess its implementation. Evaluating the library by looking at the functionality implemented is not highly relevant. A more relevant evaluation process of the library is an empirical one, which will be presented later in this chapter.
@@ -20,14 +20,14 @@ However, when looking at the requirements for the grading library, it is much ha
 
 Evaluating software quality is not an easy task as there is no single universally accepted way of measuring quality. Different people define software quality differently: some argue that code coverage is an indication of quality, while others believe that other metrics, such as performing efficiently, how easy can one modify the code, intelligibility of code, etc., are more relevant \citep{msft_testing, Boehm:1976:QES:800253.807736}.
 
-It is our belief that overall the resulting software is of good quality. However, performing a non-empirical evaluation of software quality is not possible. To ensure software quality, we can list some of the considerations the project took:
+It is our belief that overall the resulting software is of good quality. However, performing a non-empirical evaluation of software quality is not possible. To ensure software quality, some of the considerations the project took were the following:
 \begin{itemize}
     \item Ensure that all code is fully tested and that code coverage is 100\%
     \item Ensure that all code adheres to the standards provided by Rubocop to ensure a legible and easy to understand code.
     \item Ensure that security is implemented correctly either by strong encryption or by secure execution of user input.
 \end{itemize}
 
-One area where the software quality is not as good as we would have wanted is performance in the grading algorithm, more specifically the canonicalization process. During the transformation step, some queries are executed multiple times (e.g. getting the columns for a table is used by multiple canonicalizations steps). While grading is still very fast, these processes could be further improved to avoid unnecessary database queries.
+One area where the software quality is not as good as desired is performance in the grading algorithm, more specifically the canonicalization process. During the transformation step, some queries are executed multiple times (e.g. getting the columns for a table is used by multiple canonicalizations steps). While grading is still very fast, these processes could be further improved to avoid unnecessary database queries.
 
 \section{Comparing the application with existing tools}
 
@@ -53,14 +53,14 @@ The most important comparison with the other tools can be made based on the user
 For instance, HackerRank provides a much easier web interface to use: challenges are formed of multiple categories, each challenge has a discussion forum, one can easily see its past submissions, etc.
 
 \section{Testing the application against exercises from existing sources}
-The most important type of evaluation, in our opinion, is represented by a type of evaluation that tries to understand how practical the application would be in reality. Other tools developed for academia have been tested in actual courses. However, for this smaller project, this has not been possible; therefore, the application has been tested against different assignments from various sources. We looked at exercises from the following two sources.
+The most important type of evaluation, in our opinion, is represented by a type of evaluation that tries to understand how practical the application would be in reality. Other tools developed for academia have been tested in actual courses. However, for this smaller project, this has not been possible; therefore, the application has been tested against different assignments from various sources. The following two sources have been used:
 
 \begin{itemize}
     \item Exercises from \textit{Database System Concepts, 5th edition} written by Abraham Silberschatz, Henry F. Korth, S. Sudarshan.
     \item Exercises from the HackerRank \texttt{SQL} course.
 \end{itemize}
 
-The goal of this evaluation is to understand if the application will be able to handle actual usage if it were to be deployed in production. The evaluation will focus exclusively on the accuracy of the grading algorithm. To assess the accuracy of the algorithm built, an evaluation of its ability to extract comparable components has been performed. We can define  a comparable component as one that was either canonicalized or cannot be rewritten in any other way. This aspect is the the most important one of the application as it directly influences the final grade.
+The goal of this evaluation is to understand if the application will be able to handle actual usage if it were to be deployed in production. The evaluation will focus exclusively on the accuracy of the grading algorithm. To assess the accuracy of the algorithm built, an evaluation of its ability to extract comparable components has been performed. A comparable component can be defined as one that was either canonicalized or cannot be rewritten in any other way. This aspect is the the most important one of the application as it directly influences the final grade.
 
 \subsection{Exercises from HackerRank}
 
@@ -136,9 +136,9 @@ The results based on the challenge category are as following:
 
 Overall, out of 68 challenges from HackerRank, the algorithm was able to fully transform 46 of them - a success rate of 67\%. 
 
-The most important issue that showed up during the evaluation process is how limited sql-parser is. We discovered many issues such as not being able to handle column names (if unqouted) that contain SQL commands in them (e.g. COUNTRYCODE would trigger an error as it includes COUNT). In addition, we noticed that sql-parser does not currently support the full SQL language (e.g. methods such as \mintinline{mysql}{LENGTH} were not included, or math rounding functions were not included). While some bugs have been fixed, there are still some bugs that prevent the parsing of queries. The full limitation of sql-parser will be presented in the conclusion chapter, under the limitation section.
+The most important issue that showed up during the evaluation process is how limited sql-parser is. Many issues were discovered, such as not being able to handle column names (if unqouted) that contain SQL commands in them (e.g. COUNTRYCODE would trigger an error as it includes COUNT). In addition, sql-parser does not currently support the full SQL language (e.g. methods such as \mintinline{mysql}{LENGTH} were not included, or math rounding functions were not included). While some bugs have been fixed, there are still some bugs that prevent the parsing of queries. The full limitation of sql-parser will be presented in the conclusion chapter, under the limitation section.
 
-Another issue that showed up was the use of sub-queries in complicated queries. We knew before that more advance queries had to use sub-queries to solve the challenge, so this was expected.
+Another issue that showed up was the use of sub-queries in complicated queries. It was known that more advanced queries had to use sub-queries to solve the challenge, so this was expected.
 
 \subsection{Exercises from \textit{Database System Concepts, 5th edition}}
 
@@ -164,4 +164,4 @@ After the evaluation process, and especially the evaluation using HackerRank exe
     \item The partial algorithm is a improved version over XData by providing even more detailed partial grading.
 \end{enumerate}
 
-With all these in mind, our belief is that the application in its current form is not yet fully complete. More work has to be done to improve some features, especially the parser and adding support for sub-queries. We think that the approach taken by XData and our project is the correct one to ensure accurate partial grading.
+With all these in mind, our belief is that the application in its current form is not yet fully complete. More work has to be done to improve some features, especially the parser and adding support for sub-queries. We believe that the approach taken by XData and our project is the correct one to ensure accurate partial grading.

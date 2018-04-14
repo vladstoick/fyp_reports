@@ -2,7 +2,7 @@
 
 \section{System Architecture}
 
-As mentioned in section \ref{ch:reqandspec:sec:spec}, we have opted for a design that involves two components: a Ruby on Rails web application and a Ruby library. The main Ruby on Rails application includes the grading library as one of its dependencies. In Ruby, adding a library as a dependency is the equivalent of adding the code of the library directly in the source code. This means that the main application can now call the library's code without any other requirement such as running the library independently.
+As mentioned in section \ref{ch:reqandspec:sec:spec}, we have opted for a design that involves two components: a Ruby on Rails web application and a Ruby library. The main Ruby on Rails application includes the grading library as one of its dependencies. In Ruby, adding a library as a dependency is the equivalent of adding the code of the library directly in the source code. This means the main application can now call the library's code without any other requirement such as running the library independently.
 
 \begin{figure}[H]
     \centering
@@ -10,7 +10,7 @@ As mentioned in section \ref{ch:reqandspec:sec:spec}, we have opted for a design
     \caption{System architecture}
 \end{figure}
 
-Both the web application and the grading library will share the same MySQL server. However, they will both use different databases within the server. A more in-depth explanation of how the library uses the database server will be presented in section \ref{ch:impllib:sec:connecting}.
+Both the web application and the grading library will share the same MySQL server. However, they will each use different databases within the server. A more in-depth explanation of how the library uses the database server will be presented in section \ref{ch:impllib:sec:connecting}.
 
 \section{Grading library}
 
@@ -35,7 +35,7 @@ One of the goals of the project is to build an application that can be easily ex
     \item \mintinline{ruby}{QueryComparator}, which compares the results of two queries.
     \item \mintinline{ruby}{Graders::} namespace, which contains multiple graders whose job is to compare a grade component of a query (e.g. \mintinline{ruby}{Graders::Columns} handles the assessment of the columns component).
     \item \mintinline{ruby}{QueryComparisonResult}, which represents the final result of the grading process. It includes a grade, hint and grades of each component of the query. This class also calculates the partial grade based on the results of the \mintinline{ruby}{QueryComparator}, and a comparison between the components of the two SQL queries using the graders from \mintinline{ruby}{Graders::}.
-    \item In addition, the library also contains multiple \mintinline{ruby}{Error} classes that represent various errors that might occur during the execution of the compile or assess methods - such as the inability to establish a database connection (\mintinline{ruby}{DatabaseConnectionError}).
+    \item In addition, the library also contains multiple \mintinline{ruby}{Error} classes that represent various errors which might occur during the execution of the compile or assess methods - such as the inability to establish a database connection (\mintinline{ruby}{DatabaseConnectionError}).
 \end{enumerate}
 
 Splitting the functionality into multiple classes leads to a cleaner code allowing faster development. In addition, this strategy makes use of encapsulation. An example of one benefit of this approach is that no class other than \mintinline{ruby}{DatabaseConnection} knows how queries are exactly performed. The other classes simply know that \mintinline{ruby}{DatabaseConnection} provides a way to execute queries. This allowed the project to initially focus on the core aspect of the canonicalization and grading process, before thinking about concurrency or security issues described in section \ref{ch:impllib:sec:connecting}.
@@ -67,9 +67,9 @@ When compiling an assessment, a query will go through multiple steps:
     1 & Acquire a database connection and handle any errors. & Create a new \texttt{DatabaseConnection} and immediately return any potential \texttt{DatabaseConnectionError}. \\\hline
     2 & Create the database tables passed in the \texttt{create\_schema\_sql\_query}. & Execute the \texttt{create\_schema\_sql\_query} on the \texttt{DatabaseConnection} and immediately return any potential \texttt{DatabaseSchemaError}. \\\hline
     3 & Seed the database tables data provided by \texttt{seed\_sql\_query}. & Execute the \texttt{seed\_sql\_query} on the \texttt{DatabaseConnection} and immediately return any potential \texttt{DatabaseSeedError}. \\\hline
-    4 & Try to execute the correct query to ensure that the instructor's query can actually be performed
+    4 & Try to execute the correct query to ensure the instructor's query can actually be performed
     on the current database and that it does not contain any syntactic errors. & Execute the \texttt{instructor\_sql\_query} on the \texttt{DatabaseConnection} and immediately return any potential \texttt{DatabaseQueryExecutionFailed}. \\\hline
-    5 & Try to canonicalize the correct query to ensure that the instructor's query can be canonicalized. & Execute \texttt{QueryTransformer}'s transform method on the query and return any potential \texttt{CanonicalizationError}. \\\hline
+    5 & Try to canonicalize the correct query to ensure the instructor's query can be canonicalized. & Execute \texttt{QueryTransformer}'s transform method on the query and return any potential \texttt{CanonicalizationError}. \\\hline
     6 & Extract the tables and the data from the database. & Use \texttt{DataExtractor} to extract data and tables using the \texttt{DatabaseConnection}. \\\hline
 \end{tabularx}
 
@@ -115,8 +115,8 @@ The assess method is fairly similar to the compile method. In fact, steps 1-3 fr
 
 The library's canonicalization process will include all the transformations done by XData presented in section \ref{ch:lit:sec:canonicalization}. In addition to these, it also performs two more transformations:
 \begin{enumerate}
-    \item Transforming \mintinline{mysql}{*} in the full list of columns. This will ensure that the algorithm will not penalize students who type the full list of columns, instead of just using  \mintinline{mysql}{*}.
-    \item Making MySQL default attributes explicit. For instance, every MySQL \mintinline{mysql}{SELECT} query has a default uniqueness filter of \mintinline{mysql}{ALL}. That means that while explicitly mentioning \mintinline{mysql}{ALL} will have no effect, it will not make the query wrong either. This canonicalization process will take part in the extraction of components phase.
+    \item Transforming \mintinline{mysql}{*} in the full list of columns. This will ensure the algorithm will not penalize students who type the full list of columns, instead of just using  \mintinline{mysql}{*}.
+    \item Making MySQL default attributes explicit. For instance, every MySQL \mintinline{mysql}{SELECT} query has a default uniqueness filter of \mintinline{mysql}{ALL}. This means that, while explicitly mentioning \mintinline{mysql}{ALL} will have no effect, it will not make the query wrong either. This canonicalization process will take part in the extraction of components phase.
 \end{enumerate}
 
 The order in which transformations are performed is essential. For instance, the transformation of the BETWEEN predicate must happen before the transformation of \mintinline{mysql}{>=} to \mintinline{mysql}{<=}. That is because a \mintinline{mysql}{BETWEEN} clause will add a \mintinline{mysql}{>=}. Therefore the following order will be used:
@@ -151,7 +151,7 @@ When looking at a query, we can determine the following types of components:
             \item Ordering list
             \item Grouping list
         \end{itemize}
-    \item Boolean components: that are a Boolean expression. This is the case for:
+    \item Boolean components that are a Boolean expression. This is the case for:
         \begin{itemize}
             \item Where filtering
             \item Group filtering
@@ -178,7 +178,7 @@ end
 \caption{Grading algorithm for uniqueness filter}
 \end{code}
 
-In the case of the limit and offset filter, both attributes have a weight of 50\% each. That means that if both attributes match, the grade assigned will be 100\%, if only one attribute matches, then a grade of 50\% will be assigned, otherwise a grade of 0\% will be given.
+In the case of the limit and offset filter, both attributes have a weight of 50\% each. This means that if both attributes match, the grade assigned will be 100\%, if only one attribute matches, then a grade of 50\% will be assigned, otherwise a grade of 0\% will be given.
 \begin{code}
 \begin{verbatim}
 grade = 0
@@ -196,7 +196,7 @@ end
 Each array component can be compared with the components of the instructor's query, and assigned a match score (or percentage). For instance, a \mintinline{mysql}{ORDER BY c1 ASC} can be compared to \mintinline{mysql}{ORDER BY c1 DESC} and be assigned a match score. We apply the following matching rules:
 
 \begin{itemize}
-    \item Columns list: a 100\% match means that the two columns are identical. If the two columns are different, we then check the table - if the table is the same we then apply a levenshtein distance between the two column names to see how close they are.
+    \item Columns list: a 100\% match means the two columns are identical. If the two columns are different, we then check the table - if the table is the same we then apply a levenshtein distance between the two column names to see how close they are.
     \begin{code}
     \begin{verbatim}
 if table names and column names are equal then
@@ -209,7 +209,7 @@ end
     \end{verbatim}
     \caption{Match score for columns}
     \end{code}
-    \item Table list: a 100\% match means that the the components are identical. 50\% of the tables grade is determined by the equality of the base table  (the first table in the table expression). There is no partial grading for the base tables. The other tables (join expressions) have a match score similar to the other array components. A join expressions is made up of three components: the table joined, the join type, and the join condition. For join expressions we can apply a partial grading if the table joined is identical but either of the join type or join condition are different.
+    \item Table list: a 100\% match means the components are identical. 50\% of the tables grade is determined by the equality of the base table  (the first table in the table expression). There is no partial grading for the base tables. The other tables (join expressions) have a match score similar to the other array components. A join expressions is made up of three components: the table joined, the join type, and the join condition. For join expressions we can apply a partial grading if the table joined is identical but either of the join type or join condition are different.
     \begin{code}
     \begin{verbatim}
 if join expressions are equal then
@@ -228,7 +228,7 @@ end
     \end{verbatim}
     \caption{Match score for join expressions}
     \end{code}
-    \item Ordering list: a 100\% match means that the two ordering conditions are identical and in the same position. For partial grading we will consider the position difference, or the ordering type (\mintinline{mysql}{ASC} or \mintinline{mysql}{DESC})
+    \item Ordering list: a 100\% match means the two ordering conditions are identical and in the same position. For partial grading we will consider the position difference, or the ordering type (\mintinline{mysql}{ASC} or \mintinline{mysql}{DESC})
     \begin{code}
     
 \begin{verbatim}
@@ -282,7 +282,7 @@ In a tree representation of a Boolean expression, the following are true:
     \item Leaves are represented by conditions.
 \end{enumerate}
 
-That means that a grade of such expression could be split in two separate parts, each with an equal weight. The first part would look at how many internal nodes of the tree match. For this part we can compare the two trees recursively, and see how many elements match. The second part would look at how many leaves (actual conditions) match. In order to grade this, the array approach can be used as the list of leaves is a simple array.
+This means that a grade of such expression could be split in two separate parts, each with an equal weight. The first part would look at how many internal nodes of the tree match. For this part we can compare the two trees recursively, and see how many elements match. The second part would look at how many leaves (actual conditions) match. In order to grade this, the array approach can be used as the list of leaves is a simple array.
 
 \begin{code}
 \begin{minted}{ruby}
@@ -331,7 +331,7 @@ As RoR uses MVC we can easily identify each component of the web application bas
 
 Models represent the domain of the project \citep{ruby_on_rails} or the state of the application \citep{ruby_on_rails_book}. While the state can also be transient, most models are permanent and to preserve them we will store them in the database. \mintinline{ruby}{ActiveRecord} provides an object relation mapping (ORM) from \texttt{Ruby} objects to \texttt{SQL}. The domain of the application contains the following models:
 \begin{itemize}
-    \item \mintinline{ruby}{User}, which represents a user of the web application. A user has an email and a role (either student or teacher). In addition every user has a password that they use to authenticate on the website.
+    \item \mintinline{ruby}{User}, which represents a user of the web application. A user has an email and a role (either student or teacher). In addition every user has a password they use to authenticate on the website.
     \item \mintinline{ruby}{Challenge} which represents an assignment created by a teacher. A challenge has a title, content, and three \texttt{SQL} queries: the query for creating the database schema, the query for seeding the initial data, and the correct solution for the assignment.
     \item \mintinline{ruby}{Submission} which represents a submission created by a student to a challenge, based on a student's query. A submission stores the student's query, a Boolean value that indicates whether the student's results matched the instructor's results, a grade, a breakdown of grades by component, a hint, and the extracted components of the query.
 \end{itemize}

@@ -1,9 +1,9 @@
- \chapter{Implementation and testing}
+ \chapter{Implementation and Testing}
 
 This chapter will discuss the implementation and testing of both parts of the project. This chapter does not include all implementation details, instead it focuses on the more important and challenging aspects of the project. For more details about the exact implementation, a reading of the source code is recommended.
 
 \section{Library: connecting to a MySQL server and executing queries} \label{ch:impllib:sec:connecting}
-To connect to a MySQL server, the library uses the Ruby library mysql2. The library, or gem as it is called in Ruby, provides the implementation for connecting, querying and retrieving results from a MySQL server. mysql2 is binding to MySQL's C library libmysql. mysql2 is the more modern and lean version of the mysql gem. According to the project's Github page, mysql2 can be 2 times faster than mysql. Furthermore, mysql2 is also much more popular with over 42 million downloads on RubyGems, compared to mysql's 8 million downloads.
+To connect to a MySQL server, the library uses the Ruby library mysql2. The library, or gem as it is called in Ruby, provides the implementation for connecting, querying and retrieving results from a MySQL server. mysql2 is binding to MySQL's C library libmysql. mysql2 is the more modern and lean version of the mysql gem. According to the project's Github page, mysql2 can be two times faster than mysql. Furthermore, mysql2 is also much more popular with over 42 million downloads on RubyGems, compared to mysql's 8 million downloads.
 
 To connect to a MySQL server, the library requires the address and port of the server, and an account and password. The account must be the root user or at least one that has the permission to create and drop databases, to create and drop users, and to grant permissions to an user.
 
@@ -44,7 +44,7 @@ end
 
 \subsection{Preventing malicious actions from input SQL queries}
 
-Considering the fact that the library executes arbitrary queries, the risks associated with malicious SQL are significant. The application never returns back the query results which means that the potential for data leaking by abusing the execution of arbitrary queries does not exist. However, an arbitrary query can destroy or modify other databases on the MySQL server. Therefore, the library must take extra precautions as it deals with unchecked user code. To prevent malicious actions, we create a new MySQL user that only has permission for the newly created database.
+Considering that the library executes arbitrary queries, the risks associated with malicious SQL are significant. The application never returns back the query results which means the potential for data leaking by abusing the execution of arbitrary queries does not exist. However, an arbitrary query can destroy or modify other databases on the MySQL server. Therefore, the library must take extra precautions as it deals with unchecked user code. To prevent malicious actions, we created a new MySQL user that only has permission for the newly created database.
 
 %TC:ignore
 \begin{code}
@@ -65,7 +65,7 @@ The only way to get around the limitation of the restricted user would be to use
 
 During the canonicalization and grading process, SQL queries will go through multiple transformations after being parsed and separated in independent components. MySQL does not provide an official parser for any programming language, so the library had to use a 3rd party tool. The advantage of using an existing parser is that we can ignore the implementation details of parsing.
 
-The library initially used the sql-parser Ruby gem. Throughout the development process, there have been multiple problems associated with this tool. Most importantly, the library did not have support for multiple SQL statements that we required. Unfortunately, many issues with sql-parser were discovered only late in the project.
+The library initially used the sql-parser Ruby gem. Throughout the development process, there have been multiple problems associated with this tool. Most importantly, the library did not have support for multiple SQL statements we required. Unfortunately, many issues with sql-parser were discovered only late in the project.
 
 An alternative was represented by the pg\_query Ruby gem. Internally, it uses PostgreSQL's parsing library libpg\_query built in C++. pg\_query provides much better code and stability, due to its nature of being part of a production database system, compared to sql-parser which is only used for parsing. PostgreSQL, like MySQL, is a widely used database system, being the 4th most used database engine according to \cite{db_engine:statistics}. Although both PostgreSQL and MySQL have SQL at their core, each one implements their own version of SQL. Therefore, a query might work in MySQL, but not work in PostgreSQL, or return different results. For instance, in MySQL string comparison is case insensitive, while in PostgreSQL it is not. In addition, each SQL version adds their own functions that diverge from Standard SQL. Therefore, implementing pg\_query turned out to be impossible due to the many differences in syntax between the two SQL versions. In addition, time constraints made it unjustifiable to spend time on re-implementing all transformers already built.
 
@@ -144,7 +144,7 @@ All the leaves presented in figure \ref{fig:select_ast} also have their nodes. F
 
 
 \subsection{Using sql-parser to change queries}
-sql-parser also provides a way to change a parsed query (which is now a combination of multiple Nodes) back to a SQL query. Unfortunately, the process of internally modifying the structure of a query is not well-defined and there is no public interface exposed. Each node has one or more private instance variables that represent the values of the Node. For instance, the limit node shown in listing \ref{fig:limit_clause}, has two such variables: limit and offset. sql-parser does not provide a way to change these properties as all Nodes expose just a reader method (set using \mintinline{ruby}{attr_reader}). Fortunately, Ruby provides a \mintinline{ruby}{instance_variable_set} method which allows anyone with a reference to an object to change that object's internal variables even if they are private and no setter is exposed. It is worth mentioning that while this approach might work, the use of \mintinline{ruby}{instance_variable_set} goes against the principle of encapsulation, and might mean that a future update to the library can lead to errors, if the internal structure of Nodes is modified.
+sql-parser also provides a way to change a parsed query (which is now a combination of multiple Nodes) back to a SQL query. Unfortunately, the process of internally modifying the structure of a query is not well-defined and there is no public interface exposed. Each node has one or more private instance variables that represent the values of the Node. For instance, the limit node shown in listing \ref{fig:limit_clause}, has two such variables: limit and offset. sql-parser does not provide a way to change these properties as all Nodes expose just a reader method (set using \mintinline{ruby}{attr_reader}). Fortunately, Ruby provides a \mintinline{ruby}{instance_variable_set} method which allows anyone with a reference to an object to change that object's internal variables even if they are private and no setter is exposed. It is worth mentioning that, while this approach might work, the use of \mintinline{ruby}{instance_variable_set} goes against the principle of encapsulation, and might mean that a future update to the library can lead to errors, if the internal structure of Nodes is modified.
 \begin{code}
 \begin{minted}{ruby}
 @parsed_query.query_expression.list.instance_variable_set(
@@ -159,13 +159,13 @@ After a query is modified, sql-parser exposes a \mintinline{ruby}{.to_sql} metho
 
 \section{Library: handling sub-queries}
 
-Unfortunately, compared to XData, the library cannot handle submissions that include sub-queries. Some work to implement this has been attempted and is available in the current code: canonicalization of sub-queries, comparison of nested queries, updating sql-parser to support sub-queries in the FROM clause, etc. Unfortunately, this work has been added very late in the project meaning that most existing work had to be redone for supporting sub-queries which, due to time constraints, was not possible. That is because some parts of the library made the assumption that no sub-queries are present.
+Unfortunately, compared to XData, the library cannot handle submissions that include sub-queries. Some work to implement this has been attempted and is available in the current code: canonicalization of sub-queries, comparison of nested queries, updating sql-parser to support sub-queries in the FROM clause, etc. Unfortunately, this has been added very late in the project meaning that most existing work had to be redone for supporting sub-queries which, due to time constraints, was not possible. That is because some parts of the library made the assumption that no sub-queries are present.
 
 \section{Library: canonicalizing queries}
 
 As previously mentioned in section \ref{ch:lit:sec:improved_canon}, the library will implement a canonicalization step. The library implements all canonicalizations done by XData described in section \ref{ch:lit:sec:canonicalization}, and the additional ones presented in section \ref{ch:lit:sec:improved_canon}. All transformations use sql-parser's transformations ability combined with the ability to make queries on the database.
 
-As mentioned in the design section \ref{ch:lit:sec:improved_canon}, the canonicalization process is done sequentially in a specific order that ensures that later canonicalizations do not make changes that are incompatible with previously executed transformations. 
+As mentioned in the design section \ref{ch:lit:sec:improved_canon}, the canonicalization process is done sequentially in a specific order that ensures later canonicalizations do not make changes that are incompatible with previously executed transformations. 
 
 \begin{code}
 \begin{minted}{ruby}
@@ -187,7 +187,7 @@ end
 \end{code}
 
 \subsection{Transforming \mintinline{mysql}{*} to all columns}
-To transform \mintinline{mysql}{*} to all columns, the library uses the fact that it does not need to support sub-queries. That means that it can simply look at what tables are selected and then perform \mintinline{mysql}{SHOW COLUMNS FROM table_name} on each table to get the full list of columns for each table. The library will then simply update the list of columns (initially represented by a \mintinline{mysql}{*}) to the new list of columns which contain the full list of \texttt{table\_name.column} for each selected table.
+To transform \mintinline{mysql}{*} to all columns, the library uses the fact that it does not need to support sub-queries. This means that it can simply look at what tables are selected and then perform \mintinline{mysql}{SHOW COLUMNS FROM table_name} on each table to get the full list of columns for each table. The library will then simply update the list of columns (initially represented by a \mintinline{mysql}{*}) to the new list of columns which contain the full list of \texttt{table\_name.column} for each selected table.
 
 \begin{code}
 \begin{minted}{ruby}
@@ -363,7 +363,7 @@ end
 \end{code}
 
 \subsection{Transforming conditions from WHERE, HAVING, and JOIN conditions}
-The WHERE and HAVING clauses and the JOIN condition are represented by a Boolean expression tree. When transforming these it is essential to ensure that the structure of the expression is not altered - meaning that the before and after expressions are equivalent. To do this, the algorithm traverses the tree recursively.
+The WHERE and HAVING clauses and the JOIN condition are represented by a Boolean expression tree. When transforming these it is essential to ensure the structure of the expression is not altered - meaning that the before and after expressions are equivalent. To do this, the algorithm traverses the tree recursively.
 
 \begin{code}
 \begin{minted}{ruby}
@@ -464,7 +464,7 @@ end
 
 While sql-parser provides the AST tree for the parsed query, it does not explicitly provide the components of a query. To extract them, the library makes use of the AST and makes various transformations in order to extract the components to a desired data structure. The resulting data structure might be similar to the AST (which is true for most components), but it might also be different (for instance the FROM expression is represented as a tree in the AST, but we can more clearly represent it as an array).
 
-This extraction and transformation process helps in three important ways. First of all, it extracts the data in a format that can be easily compared by the grading algorithm. Second of all, same types of components are extracted to a similar format (for instance the structure of the WHERE component is identical to the structure of the HAVING component). In addition, the format can be defined in a way that is also easy to display on the front-end.
+This extraction and transformation process helps in three important ways. First of all, it extracts the data in a format that can be easily compared by the grading algorithm. Second of all, equivalent types of components are extracted to a similar format (for instance the structure of the WHERE component is identical to the structure of the HAVING component). Lastly, the format can be defined in a way that is also easy to display on the front-end.
 
 \subsection{Making defaults explicit}
 
@@ -633,10 +633,10 @@ Currently, the hints provided are only at the component level. Every wrong compo
 
 \section{Web application: user management}
 \subsection{Authentication}
-Authentication in the web application is implemented using the devise library. Devise is the most popular authentication library built for Ruby on Rails with over 18000 stars on GitHub and over 33 million downloads on Ruby gems. In addition to a simple log-in / log-out functionality, devise provides many out-of-the-box features: recovering password, sending and handling confirmation emails, integration with OAuth providers such as Facebook login, etc. An important aspect of any authentication system is how passwords are stored in the database. Devise uses the bcrypt algorithm to hash passwords. bcrypt is a password hashing function \citep{wiki:bcrypt} that is used in OpenBSD and Suse Linux and trusted by many big companies such as Dropbox \citep{dropbox:authentication},
+Authentication in the web application is implemented using the devise library. Devise is the most popular authentication library built for Ruby on Rails with over 18000 stars on GitHub and over 33 million downloads on Ruby gems. In addition to a simple log-in / log-out functionality, devise provides many out-of-the-box features: recovering password, sending and handling confirmation emails, integration with OAuth providers such as Facebook login, etc. An important aspect of any authentication system is how passwords are stored in the database. Devise uses the bcrypt algorithm to hash passwords. bcrypt is a password hashing function \citep{wiki:bcrypt} used in OpenBSD and Suse Linux and trusted by many big companies such as Dropbox \citep{dropbox:authentication},
 
 \subsection{Authorization}
-To handle roles the application uses two tools: a role field on the user database, and the pundit library. pundit is a library that provides ''authorization through Object Oriented Design and pure Ruby classes'' \citep{github:pundit}. Every user has a role that is either student or admin.
+To handle roles, the application uses two tools: a role field on the user database, and the pundit library. pundit is a library that provides ''authorization through Object Oriented Design and pure Ruby classes'' \citep{github:pundit}. Every user has a role that is either student or admin.
 
 Pundit makes use of the concept of policies, which describe the authorization rules for a model. This means that every model will have an associated policy. A policy has the following attributes:
 

@@ -2,7 +2,7 @@
 
 The topic of assessing SQL has been looked into by various scholars. While most existing work focuses on the learning and teaching aspect, there is one more recent work done by \cite{literature:xdata} which also talks about automated grading.
 
-All existing work acknowledges that there are many issues with students learning SQL \citep{literature:assesql, literature:sqlify}. Although many students are able to express queries in natural language, they have issues expressing them in SQL \citep{literature:mitrovic}. While teaching a university course about SQL, \cite{literature:mitrovic} noticed that many students also struggle with memorizing the database schema, often making naming mistakes. Furthermore, many students struggled to understand what mistakes they were making because they could only see detailed compilation errors \citep{literature:mitrovic}. These difficulties have been found by multiple scholars \citep{literature:assesql, literature:sqlify, literature:kearns, literature:mitrovic}.
+All existing work acknowledges that there are many issues with students learning SQL \citep{literature:assesql, literature:sqlify}. Although many students are able to express queries in natural language, they have issues expressing them in SQL \citep{literature:mitrovic}. While teaching a university course about SQL, \cite{literature:mitrovic} noticed many students also struggle with memorizing the database schema, often making naming mistakes. Furthermore, many students struggled to understand what mistakes they were making because they could only see detailed compilation errors \citep{literature:mitrovic}. These difficulties have been found by multiple scholars \citep{literature:assesql, literature:sqlify, literature:kearns, literature:mitrovic}.
 
 The obstacles of learning SQL can be associated with the way SQL can be learned. Constructing correct queries is not a skill that can simply be learned without significant effort and sufficient practice \citep{literature:assesql}. An inexperienced student will also have trouble visualizing the results of a query \citep{literature:assesql}.
 
@@ -18,20 +18,20 @@ Due to the nature of existing work, most past work has tried to improve learning
     \item SQLify \citep{literature:sqlify}
 \end{itemize}
 
-All tutor applications listed above are meant to aid the student in their learning process. There are multiple ways the tutoring application can improve the teaching experience. In the applications listed above we noticed the following features:
+All tutor applications listed above are meant to aid the student in their learning process. There are multiple ways the tutoring application can improve the teaching experience. In the applications listed above, the following features were the most important:
 
 \begin{itemize}
     \item Displaying the database schema
     \item Providing feedback to students (in practice mode). The level of feedback varies from tool to tool. Some tools simply opt for displaying if the query is correct or wrong, while others provide a more detailed view of the results \citep{literature:assesql, literature:activesql}.
     \item Automated grading using one of the following algorithms:
         \begin{itemize}
-            \item Based on percentage of matched results: in some cases the grade was binary: that is either 100\% or 0\% \citep{literature:assesql}, while in other cases a grade was given based on how many results are matched \citep{literature:activesql}.
-            \item Based on peer review who assigns certain levels that a query meets \citep{literature:sqlify} in three factors: the output schema, the syntax of the query, and query semantics
+            \item Based on percentage of matched results: in some cases the grade was binary: either 100\% or 0\% \citep{literature:assesql}, while in other cases a grade was given based on how many results are matched \citep{literature:activesql}.
+            \item Based on peer review who assigns certain levels a query meets \citep{literature:sqlify} in three factors: the output schema, the syntax of the query, and query semantics
         \end{itemize}
     \item Support for typing queries in relational algebra
 \end{itemize}
 
-Using these applications in the teaching process has been correlated to increased confidence in using SQL \citep{literature:activesql} and better performance in examinations \citep{literature:sqlify}. In addition, one quantitative study done with students who used such applications \citep{literature:activesql} showed that this type of tutor (especially as a web application) is helpful to students, with 92\% of them saying that using the application increased their understanding of SQL. Furthermore, 85\% said that practicing SQL online suits them better than testing their ability using paper tests.
+Using these applications in the teaching process has been correlated to increased confidence in using SQL \citep{literature:activesql} and better performance in examinations \citep{literature:sqlify}. In addition, one quantitative study done with students who used such applications \citep{literature:activesql} showed this type of tutor (especially as a web application) is helpful to students, with 92\% of them saying that using the application increased their understanding of SQL. Furthermore, 85\% said that practicing SQL online suits them better than testing their ability using paper tests.
 
 As previously mentioned, all these tools provide some sort of feedback, and all rely on displaying the result of the query and indicating which rows are not correct. These sort of hints can help the students understand what is wrong with their query. However, these sort of hints do not provide any helpful insights on the actual query: for example, they do not indicate if a \mintinline{mysql}{WHERE} condition is wrong, or if a \mintinline{mysql}{DISTINCT} filter is wrong.
 
@@ -44,11 +44,11 @@ In the cases where partial marking exists, it is done based on the percentage of
     \item When the expected query is supposed to return no results, a clearly wrong query such as $1 = 2$ will return no results as well.
 \end{itemize}
 
-In addition, we found that the results also heavily depend on the data set on which the two queries are compared. A wrongly defined data set could lead to correct results even if the student's query is different. For instance, if we look at the following case: a table that has one columns. The data set included is (1, 2, 5, 7). The solution is looking for all rows that have a value less than 5. That means that a query such as \mintinline{mysql}{SELECT * from table1 WHERE column < 7} will return the expected results.
+In addition, the results also heavily depend on the data set on which the two queries are compared. A wrongly defined data set could lead to correct results even if the student's query is different. For instance, if we look at the following case: a table that has one columns. The data set included is (1, 2, 5, 7). The solution is looking for all rows that have a value less than 5. That means that a query such as \mintinline{mysql}{SELECT * from table1 WHERE column < 7} will return the expected results.
 
 \subsection{XData}
 
-More recent contributions by \cite{literature:xdata} improve the issues with existing learning tools. \cite{literature:xdata} have built XData, \textit{an interactive platform} for grading and learning SQL. Their work identifies all existing issues with SQL tools that we described above with regards to grading SQL.
+More recent contributions by \cite{literature:xdata} improve the issues with existing learning tools. \cite{literature:xdata} have built XData, \textit{an interactive platform} for grading and learning SQL. Their work identifies all existing issues with SQL tools described above, with regards to grading SQL.
 
 The main focus of XData is to improve the partial grading of queries. XData uses a different approach to assessing SQL compared to the tutor tools. Instead of considering the query results as the main aspect of an exercise, they consider the query components as the focus point when grading a query.
 
@@ -71,7 +71,7 @@ SELECT
   [LIMIT [[offset,] row_count | row_count OFFSET offset]]
 \end{minted}
 
-From this we can get the following components:
+The following components can be extracted from this:
 
 \begin{enumerate}
   \item \textbf{Uniqueness filtering}: what type of filtering should be applied. There are
@@ -107,7 +107,7 @@ just as correct.
   \mintinline{mysql}{SELECT a from t1 a.id >= 2;}
 \end{itemize}
 
-Therefore, we can see that a simple comparison of elements will not be efficient in spotting if two queries are actually different. Therefore, before we can compare the two queries, we need a way to transform the two queries to a similar form. Without those transformations, the simple comparison may indicate
+Therefore, it can be seen that a simple comparison of elements will not be efficient in spotting if two queries are actually different. Therefore, before comparing the two queries, a way to transform the two queries to a similar form is needed. Without those transformations, the simple comparison may indicate
 that two queries are very different.
 
 \subsubsection{Canonicalization of queries} \label{ch:lit:sec:canonicalization}
